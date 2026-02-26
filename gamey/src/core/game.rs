@@ -307,18 +307,18 @@ impl GameY {
         result
     }
 
-    /// Returns the positions (as indices) of the current player's pieces
-    pub fn get_player_positions(&self) -> Vec<u32> {
-        let current_player = match self.next_player() {
-            Some(player) => player,
-            None => return Vec::new(), // if game id over there is no opponent
+    /// Returns the positions (as Coordinates) of the current player's pieces
+    pub fn get_player_positions_coords(&self) -> Vec<Coordinates> {
+        let current_player = match self.status {
+            GameStatus::Ongoing { next_player } => next_player,
+            GameStatus::Finished { winner } => winner,
         };
 
         self.board_map
             .iter()
             .filter_map(|(coords, &(_, player))| {
                 if player == current_player {
-                    Some(coords.to_index(self.board_size))
+                    Some(*coords)
                 } else {
                     None
                 }
@@ -326,24 +326,32 @@ impl GameY {
             .collect()
     }
 
-    /// Returns the positions (as indices) of the opponent's pieces
-    pub fn get_opponent_positions(&self) -> Vec<u32> {
-        let current_player = match self.next_player() {
-            Some(player) => player,
-            None => return Vec::new(), // if game id over there is no opponent
+    /// Returns the positions (as Coordinates) of the opponent's pieces
+    pub fn get_opponent_positions_coords(&self) -> Vec<Coordinates> {
+        let current_player = match self.status {
+            GameStatus::Ongoing { next_player } => next_player,
+            GameStatus::Finished { winner } => winner,
+        };
+
+        let opponent_id = if current_player.id() == 0 {
+            PlayerId::new(1)
+        } else {
+            PlayerId::new(0)
         };
 
         self.board_map
             .iter()
             .filter_map(|(coords, &(_, player))| {
-                if player != current_player {
-                    Some(coords.to_index(self.board_size))
+                if player == opponent_id {
+                    Some(*coords)
                 } else {
                     None
                 }
             })
             .collect()
     }
+
+
 
     /// Calculates manhattan distance for the bots
     pub fn manhattan_distance(&self, a: Coordinates, b: Coordinates) -> u32 {
