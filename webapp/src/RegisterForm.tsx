@@ -33,9 +33,12 @@ const RegisterForm: React.FC = () => {
       
       if (res.ok) {
         setResponseMessage(data.message);
-        navigate('/game', { state: { username } });
+
+        localStorage.setItem("username", username); //username is saved
+        navigate("/home", { state: { username } }); // goes to home
+      
       } else {
-        setError(data.error || 'Server error');
+        setError(data.error || "Server error");
       }
     } catch (err: any) {
       setError(err.message || 'Network error');

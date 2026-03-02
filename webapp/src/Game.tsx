@@ -1,4 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import Navbar from "./Navbar";
 
 type BotId = "random_bot" | "smart_bot";
 
@@ -6,7 +8,7 @@ type GatewayResponse =
   | { ok: true; yen?: any; message?: string }
   | { ok: false; error: string; details?: any };
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
 
 const HUMAN = "B";
 const BOT = "R";
@@ -34,6 +36,25 @@ async function readGatewayResponse(res: Response): Promise<GatewayResponse> {
 }
 
 const Game: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Username desde state o localStorage (para no perderlo al refrescar)
+  const username = useMemo(() => {
+    const st = (location.state as { username?: string } | null) ?? null;
+    return st?.username ?? localStorage.getItem("username") ?? "";
+  }, [location.state]);
+
+  useEffect(() => {
+    // si no hay usuario, vuelta a register
+    if (!username) navigate("/", { replace: true });
+  }, [username, navigate]);
+
+  const logout = () => {
+    localStorage.removeItem("username");
+    navigate("/", { replace: true });
+  };
+
   const [yen, setYen] = useState<any>(null);
   const [botId] = useState<BotId>("random_bot");
   const [selected, setSelected] = useState<{ row: number; col: number } | null>(null);
@@ -136,135 +157,137 @@ const Game: React.FC = () => {
     }
   };
 
+  // Mientras redirige, no renderiza nada
+  if (!username) return null;
+
   return (
-    <div style={{ padding: 30, fontFamily: "system-ui" }}>
-      <h1 style={{ textAlign: "center" }}>GameY</h1>
+    <div className="page">
+      <Navbar username={username} onLogout={logout} />
 
-      <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 15 }}>
-        <button
-          onClick={newGame}
-          disabled={busy}
-          style={{
-            padding: "8px 14px",
-            borderRadius: 12,
-            background: "#A52019",
-            color: "white",
-            border: "none",
-            opacity: busy ? 0.7 : 1,
-            cursor: busy ? "not-allowed" : "pointer",
-          }}
-        >
-          Nueva partida
-        </button>
+      <div style={{ padding: 30, fontFamily: "system-ui" }}>
+        <h1 style={{ textAlign: "center" }}>GameY</h1>
 
-        <button
-          onClick={sendMove}
-          disabled={!selected || busy || !yen}
-          style={{
-            padding: "8px 14px",
-            borderRadius: 12,
-            background: "#FF681F",
-            color: "white",
-            border: "none",
-            opacity: !selected || busy || !yen ? 0.5 : 1,
-            cursor: !selected || busy || !yen ? "not-allowed" : "pointer",
-          }}
-        >
-          {busy ? "Enviando…" : "Enviar jugada"}
-        </button>
-      </div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 15 }}>
+          <button
+            onClick={newGame}
+            disabled={busy}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 12,
+              background: "#A52019",
+              color: "white",
+              border: "none",
+              opacity: busy ? 0.7 : 1,
+              cursor: busy ? "not-allowed" : "pointer",
+            }}
+          >
+            Nueva partida
+          </button>
 
-      {error && (
-        <div style={{ color: "red", textAlign: "center", marginBottom: 10, fontWeight: 600 }}>
-          {error}
+          <button
+            onClick={sendMove}
+            disabled={!selected || busy || !yen}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 12,
+              background: "#FF681F",
+              color: "white",
+              border: "none",
+              opacity: !selected || busy || !yen ? 0.5 : 1,
+              cursor: !selected || busy || !yen ? "not-allowed" : "pointer",
+            }}
+          >
+            {busy ? "Enviando…" : "Enviar jugada"}
+          </button>
         </div>
-      )}
 
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <svg
-          width={boardWidth}
-          height={boardWidth}
-          style={{
-            background: "linear-gradient(135deg, #FCF5E3, #F5F5F5)",
-            borderRadius: 18,
-          }}
-        >
-          {layoutMatrix.map((row, rowIndex) => {
-            const offsetX = padding + ((boardSize - row.length) * cellSpacing) / 2;
-
-            return row.map((cell, colIndex) => {
-              const x = offsetX + colIndex * cellSpacing;
-              const y = padding + rowIndex * rowHeight;
-
-              let fill = "#9e9e9e";
-              if (cell === HUMAN) fill = "#1e88e5";
-              if (cell === BOT) fill = "#d32f2f";
-
-              if (
-                selected &&
-                selected.row === rowIndex &&
-                selected.col === colIndex &&
-                cell === "."
-              ) {
-                fill = "#FF681F";
-              }
-
-              const clickable = cell === "." && !busy && !!yen;
-
-              return (
-                <circle
-                  key={`${rowIndex}-${colIndex}`}
-                  cx={x}
-                  cy={y}
-                  r={7}
-                  fill={fill}
-                  stroke="#3B3B3B"
-                  strokeWidth={1.5}
-                  onClick={() => {
-                    if (clickable) setSelected({ row: rowIndex, col: colIndex });
-                  }}
-                  style={{ cursor: clickable ? "pointer" : "default" }}
-                />
-              );
-            });
-          })}
-        </svg>
-      </div>
-
-      <div style={{ marginTop: 20 }}>
-        <strong>Debug YEN</strong>
-        <pre style={{ background: "#f0f0f0", padding: 12, borderRadius: 12 }}>
-          {yen ? pretty(yen) : "∅"}
-        </pre>
-      </div>
-
-      {/* Health Check Section */}
-      <div style={{ marginTop: 30, textAlign: "center" }}>
-        <button
-          onClick={checkConnection}
-          style={{
-            padding: "8px 14px",
-            borderRadius: 12,
-            background: "#2e7d32",
-            color: "white",
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
-          Comprobar conexión GameY
-        </button>
-
-        {healthStatus && (
-          <div style={{ marginTop: 10, color: "green", fontWeight: 600 }}>
-            Conectado correctamente → {healthStatus}
+        {error && (
+          <div style={{ color: "red", textAlign: "center", marginBottom: 10, fontWeight: 600 }}>
+            {error}
           </div>
         )}
 
-        {healthError && (
-          <div style={{ marginTop: 10, color: "red", fontWeight: 600 }}>
-            Error de conexión → {healthError}
-          </div>
-        )}
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <svg
+            width={boardWidth}
+            height={boardWidth}
+            style={{
+              background: "linear-gradient(135deg, #FCF5E3, #F5F5F5)",
+              borderRadius: 18,
+            }}
+          >
+            {layoutMatrix.map((row, rowIndex) => {
+              const offsetX = padding + ((boardSize - row.length) * cellSpacing) / 2;
+
+              return row.map((cell, colIndex) => {
+                const x = offsetX + colIndex * cellSpacing;
+                const y = padding + rowIndex * rowHeight;
+
+                let fill = "#9e9e9e";
+                if (cell === HUMAN) fill = "#1e88e5";
+                if (cell === BOT) fill = "#d32f2f";
+
+                if (selected && selected.row === rowIndex && selected.col === colIndex && cell === ".") {
+                  fill = "#FF681F";
+                }
+
+                const clickable = cell === "." && !busy && !!yen;
+
+                return (
+                  <circle
+                    key={`${rowIndex}-${colIndex}`}
+                    cx={x}
+                    cy={y}
+                    r={7}
+                    fill={fill}
+                    stroke="#3B3B3B"
+                    strokeWidth={1.5}
+                    onClick={() => {
+                      if (clickable) setSelected({ row: rowIndex, col: colIndex });
+                    }}
+                    style={{ cursor: clickable ? "pointer" : "default" }}
+                  />
+                );
+              });
+            })}
+          </svg>
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <strong>Debug YEN</strong>
+          <pre style={{ background: "#f0f0f0", padding: 12, borderRadius: 12 }}>
+            {yen ? pretty(yen) : "∅"}
+          </pre>
+        </div>
+
+        {/* Health Check Section */}
+        <div style={{ marginTop: 30, textAlign: "center" }}>
+          <button
+            onClick={checkConnection}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 12,
+              background: "#2e7d32",
+              color: "white",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            Comprobar conexión GameY
+          </button>
+
+          {healthStatus && (
+            <div style={{ marginTop: 10, color: "green", fontWeight: 600 }}>
+              Conectado correctamente → {healthStatus}
+            </div>
+          )}
+
+          {healthError && (
+            <div style={{ marginTop: 10, color: "red", fontWeight: 600 }}>
+              Error de conexión → {healthError}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
