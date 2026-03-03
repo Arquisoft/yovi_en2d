@@ -1,5 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useI18n } from "./i18n/I18nProvider";
+import type { Lang } from "./i18n/translations";
 
 type NavbarProps = {
   username?: string | null;
@@ -9,47 +11,59 @@ type NavbarProps = {
 const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { lang, setLang, t } = useI18n();
 
   const go = (path: string) => navigate(path);
 
-  const isActive = (path: string) => location.pathname === path;
-
   return (
-    <nav className="nav">
-      <button className="nav__brand" onClick={() => go("/home")} type="button">
-        GameY
-      </button>
+    <header className="navbar">
+      <div className="navbar__inner">
+        <button className="navbar__brand" onClick={() => go("/home")} type="button" aria-label="Ir a Home">
+          <span className="navbar__brandDot" aria-hidden="true" />
+          {t("app.brand")}
+        </button>
 
-      <div className="nav__right">
-        {username ? <span className="nav__user">👤 {username}</span> : <span className="nav__user">👤 Invitado</span>}
+        <div className="navbar__right">
+          <div className="navbar__user" aria-label="Usuario actual">
+            👤 {t("common.user")}: {username || "—"}
+          </div>
 
-        <div className="nav__actions">
-          <button
-            type="button"
-            className={`nav__btn ${isActive("/home") ? "nav__btn--active" : ""}`}
-            onClick={() => go("/home")}
+          <select
+            className="lang-select"
+            aria-label={t("common.language")}
+            value={lang}
+            onChange={(e) => setLang(e.target.value as Lang)}
           >
-            Home
-          </button>
+            <option value="es">ES</option>
+            <option value="en">EN</option>
+          </select>
 
-          <button
-            type="button"
-            className={`nav__btn ${isActive("/game") ? "nav__btn--active" : ""}`}
-            onClick={() => go("/game")}
-          >
-            Game
-          </button>
+          <nav className="navbar__actions" aria-label="Navegación principal">
+            <button
+              type="button"
+              className="navbtn"
+              aria-current={location.pathname === "/home" ? "page" : undefined}
+              onClick={() => go("/home")}
+            >
+              {t("common.home")}
+            </button>
 
-          <button
-            type="button"
-            className="nav__btn nav__btn--danger"
-            onClick={() => (onLogout ? onLogout() : go("/"))}
-          >
-            Logout
-          </button>
+            <button
+              type="button"
+              className="navbtn"
+              aria-current={location.pathname === "/game" ? "page" : undefined}
+              onClick={() => go("/game")}
+            >
+              {t("common.game")}
+            </button>
+
+            <button type="button" className="navbtn navbtn--danger" onClick={onLogout}>
+              {t("common.logout")}
+            </button>
+          </nav>
         </div>
       </div>
-    </nav>
+    </header>
   );
 };
 

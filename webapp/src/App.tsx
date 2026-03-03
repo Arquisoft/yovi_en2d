@@ -11,8 +11,6 @@ function App() {
         <Route path="/" element={<RegisterForm />} />
         <Route path="/home" element={<Home />} />
         <Route path="/game" element={<Game />} />
-
-        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

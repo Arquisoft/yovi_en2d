@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { useI18n } from "./i18n/I18nProvider";
 
 type BotId = "random_bot" | "smart_bot";
 
@@ -38,15 +39,14 @@ async function readGatewayResponse(res: Response): Promise<GatewayResponse> {
 const Game: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useI18n(); // ✅ Hook arriba del componente
 
-  // Username from state or localstate -> to not lose it when refreshing
   const username = useMemo(() => {
     const st = (location.state as { username?: string } | null) ?? null;
     return st?.username ?? localStorage.getItem("username") ?? "";
   }, [location.state]);
 
   useEffect(() => {
-    // if no user -> back to register
     if (!username) navigate("/", { replace: true });
   }, [username, navigate]);
 
@@ -157,7 +157,6 @@ const Game: React.FC = () => {
     }
   };
 
-  // Do not render until redirected
   if (!username) return null;
 
   return (
@@ -165,7 +164,7 @@ const Game: React.FC = () => {
       <Navbar username={username} onLogout={logout} />
 
       <div style={{ padding: 30, fontFamily: "system-ui" }}>
-        <h1 style={{ textAlign: "center" }}>GameY</h1>
+        <h1 style={{ textAlign: "center" }}>{t("app.brand")}</h1>
 
         <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 15 }}>
           <button
@@ -181,7 +180,7 @@ const Game: React.FC = () => {
               cursor: busy ? "not-allowed" : "pointer",
             }}
           >
-            Nueva partida
+            {t("game.new")}
           </button>
 
           <button
@@ -197,7 +196,7 @@ const Game: React.FC = () => {
               cursor: !selected || busy || !yen ? "not-allowed" : "pointer",
             }}
           >
-            {busy ? "Enviando…" : "Enviar jugada"}
+            {busy ? t("game.sending") : t("game.send")}
           </button>
         </div>
 
@@ -254,13 +253,12 @@ const Game: React.FC = () => {
         </div>
 
         <div style={{ marginTop: 20 }}>
-          <strong>Debug YEN</strong>
+          <strong>{t("game.debug")}</strong>
           <pre style={{ background: "#f0f0f0", padding: 12, borderRadius: 12 }}>
             {yen ? pretty(yen) : "∅"}
           </pre>
         </div>
 
-        {/* Health Check Section */}
         <div style={{ marginTop: 30, textAlign: "center" }}>
           <button
             onClick={checkConnection}
@@ -273,18 +271,18 @@ const Game: React.FC = () => {
               cursor: "pointer",
             }}
           >
-            Comprobar conexión GameY
+            {t("game.check")}
           </button>
 
           {healthStatus && (
             <div style={{ marginTop: 10, color: "green", fontWeight: 600 }}>
-              Conectado correctamente → {healthStatus}
+              {t("game.ok", { msg: healthStatus })}
             </div>
           )}
 
           {healthError && (
             <div style={{ marginTop: 10, color: "red", fontWeight: 600 }}>
-              Error de conexión → {healthError}
+              {t("game.fail", { msg: healthError })}
             </div>
           )}
         </div>
