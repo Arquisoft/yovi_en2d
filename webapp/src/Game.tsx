@@ -39,7 +39,7 @@ async function readGatewayResponse(res: Response): Promise<GatewayResponse> {
 const Game: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useI18n(); // ✅ Hook arriba del componente
+  const { t } = useI18n();
 
   const username = useMemo(() => {
     const st = (location.state as { username?: string } | null) ?? null;

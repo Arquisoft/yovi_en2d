@@ -54,15 +54,25 @@ const RegisterForm: React.FC = () => {
         <div className="register-toprow">
           <span style={{ fontWeight: 900, opacity: 0.95 }}>{t("register.title")}</span>
 
-          <select
-            className="lang-select"
-            aria-label={t("common.language")}
-            value={lang}
-            onChange={(e) => setLang(e.target.value as Lang)}
-          >
-            <option value="es">ES</option>
-            <option value="en">EN</option>
-          </select>
+          <div className="lang-toggle" role="group" aria-label={t("common.language")}>
+            <button
+              type="button"
+              className={`lang-btn ${lang === "es" ? "is-active" : ""}`}
+              onClick={() => setLang("es")}
+              aria-pressed={lang === "es"}
+            >
+              ES
+            </button>
+
+            <button
+              type="button"
+              className={`lang-btn ${lang === "en" ? "is-active" : ""}`}
+              onClick={() => setLang("en")}
+              aria-pressed={lang === "en"}
+            >
+              EN
+            </button>
+          </div>
         </div>
 
         <div className="form-group">

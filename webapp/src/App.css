@@ -370,27 +370,41 @@ body{
 }
 
 /* I18N */
-/* Language select */
-.lang-select{
+/* I18N Toggle (ES/EN) */
+.lang-toggle{
+  display: inline-flex;
+  align-items: center;
   border: 1px solid var(--stroke);
   background: rgba(255,255,255,.04);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+
+.lang-btn{
+  appearance: none;
+  border: 0;
+  background: transparent;
   color: var(--text);
   padding: 10px 12px;
-  border-radius: var(--r2);
-  font-weight: 800;
+  font-weight: 900;
   cursor: pointer;
+  line-height: 1;
 }
 
-.lang-select:focus{
-  outline: none;
+.lang-btn:hover{
+  background: rgba(255,255,255,.06);
 }
 
-.lang-select option{
-  background: #001b2c;
-  color: var(--text);
+.lang-btn.is-active{
+  background: var(--baby);
+  color: #000;
 }
 
-/* En el register, lo ponemos alineado a la derecha */
+.lang-btn:focus-visible{
+  outline: 3px solid var(--aqua);
+  outline-offset: -3px;
+}
+
 .register-toprow{
   display: flex;
   align-items: center;
