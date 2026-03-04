@@ -25,13 +25,9 @@ pub struct PvbMoveRequest {
     pub col: usize,
 }
 
-fn infer_board_size(layout: &str) -> u32 {
-    let rows = layout.split('/').count() as u32;
-    (rows + 1) / 2
-}
-
 fn row_col_to_coords(
     layout: &str,
+    size: u32,
     row: usize,
     col: usize,
 ) -> Result<Coordinates, String> {
@@ -52,14 +48,12 @@ fn row_col_to_coords(
     }
     index += col;
 
-    let board_size = infer_board_size(layout);
-
-    let coords = Coordinates::from_index(index as u32, board_size);
-
     let total_cells: usize = rows.iter().map(|r| r.chars().count()).sum();
     if index >= total_cells {
         return Err("Invalid coordinate conversion".to_string());
     }
+
+    let coords = Coordinates::from_index(index as u32, size);
 
     Ok(coords)
 }
@@ -70,12 +64,16 @@ pub async fn pvb_move(
     Path(params): Path<PvbParams>,
     Json(req): Json<PvbMoveRequest>,
 ) -> Result<Json<YEN>, (StatusCode, Json<ErrorResponse>)> {
+    // 1) API version is checked
     if let Err(err) = check_api_version(&params.api_version) {
         return Err((StatusCode::BAD_REQUEST, Json(err)));
     }
 
+    // 2) Save game size
     let layout_str = req.yen.layout().to_string();
+    let size = req.yen.size();
 
+    // 3) Parse YEN -> Game
     let mut game = match GameY::try_from(req.yen) {
         Ok(g) => g,
         Err(err) => {
@@ -90,6 +88,7 @@ pub async fn pvb_move(
         }
     };
 
+    // Validate game is finished
     if game.check_game_over() {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -101,7 +100,8 @@ pub async fn pvb_move(
         ));
     }
 
-    let coords = match row_col_to_coords(&layout_str, req.row, req.col) {
+    // We convert to coords
+    let coords = match row_col_to_coords(&layout_str, size, req.row, req.col) {
         Ok(c) => c,
         Err(msg) => {
             return Err((
@@ -115,6 +115,7 @@ pub async fn pvb_move(
         }
     };
 
+    // Human move
     let human_player = match game.next_player() {
         Some(p) => p,
         None => {
@@ -145,11 +146,13 @@ pub async fn pvb_move(
         ));
     }
 
+    // If we finished the game, we return
     if game.check_game_over() {
         let new_yen: YEN = (&game).into();
         return Ok(Json(new_yen));
     }
 
+    // We search for the bot
     let bot = match state.bots().find(&params.bot_id) {
         Some(b) => b,
         None => {
@@ -168,6 +171,7 @@ pub async fn pvb_move(
         }
     };
 
+    // We choose the bot move
     let bot_coords = match bot.choose_move(&game) {
         Some(c) => c,
         None => {
@@ -182,6 +186,7 @@ pub async fn pvb_move(
         }
     };
 
+    // Bot's turn
     let bot_player = match game.next_player() {
         Some(p) => p,
         None => {
@@ -212,6 +217,7 @@ pub async fn pvb_move(
         ));
     }
 
+    // New state is returned
     let new_yen: YEN = (&game).into();
     Ok(Json(new_yen))
 }

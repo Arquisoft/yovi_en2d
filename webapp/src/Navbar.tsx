@@ -1,7 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "./i18n/I18nProvider";
-import type { Lang } from "./i18n/translations";
 
 type NavbarProps = {
   username?: string | null;
