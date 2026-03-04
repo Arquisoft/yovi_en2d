@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "./i18n/I18nProvider";
+import logo from "../img/logo.png";
 
 const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
@@ -51,8 +52,11 @@ const RegisterForm: React.FC = () => {
       <form onSubmit={handleSubmit} className="register-form" aria-label="Registro de usuario">
 
         <div className="register-toprow">
-          <span style={{ fontWeight: 900, opacity: 0.95 }}>{t("register.title")}</span>
-
+          <img
+            src={logo}
+            alt="GameY"
+            className="logo"
+          />
           <div className="lang-toggle" role="group" aria-label={t("common.language")}>
             <button
               type="button"

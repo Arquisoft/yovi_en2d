@@ -24,7 +24,7 @@ export const translations: Record<Lang, Dict> = {
 
     // Home
     "home.badge": "Estás en Gamey - Yovi_EN2C",
-    "home.welcome": "Bienvenido, {username}",
+    "home.welcome": "Hola {username}",
     "home.subtitle":
       "Juega al juego Y",
     "home.start": "Empezar partida",
@@ -48,6 +48,7 @@ export const translations: Record<Lang, Dict> = {
     "game.check": "Comprobar conexión GameY",
     "game.ok": "Conectado correctamente → {msg}",
     "game.fail": "Error de conexión → {msg}",
+    "game.back": "Volver a Home",
   },
 
   en: {
@@ -71,7 +72,7 @@ export const translations: Record<Lang, Dict> = {
 
     // Home
     "home.badge": "You are in Gamey - Yovi_EN2C",
-    "home.welcome": "Welcome, {username}",
+    "home.welcome": "Hello {username}",
     "home.subtitle":
       "Play the Game of Y",
     "home.start": "Start game",
@@ -95,5 +96,6 @@ export const translations: Record<Lang, Dict> = {
     "game.check": "Check GameY connection",
     "game.ok": "Connected → {msg}",
     "game.fail": "Connection error → {msg}",
+    "game.back": "Back To Home",
   },
 };

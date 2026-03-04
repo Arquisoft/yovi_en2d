@@ -283,10 +283,36 @@ const Game: React.FC = () => {
       >
         <div
           ref={headerRef}
-          style={{ width: "100%", maxWidth: 980, display: "flex", flexDirection: "column", alignItems: "center" }}
+          style={{
+            width: "100%",
+            maxWidth: 980,
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
         >
-          <h1 style={{ margin: 0, textAlign: "center" }}>{t("app.brand")}</h1>
-
+          <button
+            type="button"
+            onClick={() => navigate("/home", { state: { username } })}
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              padding: "8px 12px",
+              borderRadius: 12,
+              border: "1px solid rgba(255,255,255,.18)",
+              background: "rgba(255,255,255,.06)",
+              color: "white",
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            {t("game.back")}
+          </button>
+          <h1 style={{ margin: 0, textAlign: "center", paddingTop: 6 }}>
+            {t("app.brand")}
+          </h1>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 10 }}>
             <button
               onClick={newGame}

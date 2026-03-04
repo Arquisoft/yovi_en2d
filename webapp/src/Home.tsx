@@ -2,6 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { useI18n } from "./i18n/I18nProvider";
+import logo from "../img/logo.png";
 
 type LocationState = { username?: string };
 
@@ -34,21 +35,20 @@ const Home: React.FC = () => {
 
       <main className="container">
         <section className="hero" aria-label="Panel de inicio">
-          <div className="hero__badge">
-            <span aria-hidden="true" />
-            {t("home.badge")}
-          </div>
+          <div className="hero__top">
+            <img src={logo} alt="GameY" className="hero__logo" />
 
+            <div className="hero__badge">
+              <span aria-hidden="true" />
+              {t("home.badge")}
+            </div>
+          </div>
           <h1 className="hero__title">{t("home.welcome", { username })}</h1>
           <p className="hero__subtitle">{t("home.subtitle")}</p>
 
           <div className="hero__actions">
             <button className="btn btn--primary" onClick={start} type="button">
               {t("home.start")}
-            </button>
-
-            <button className="btn btn--secondary" onClick={start} type="button">
-              {t("home.goBoard")}
             </button>
 
             <button className="btn btn--ghost" onClick={logout} type="button">

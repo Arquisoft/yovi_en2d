@@ -1,6 +1,7 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "./i18n/I18nProvider";
+import logo from "../img/logo.png";
 
 type NavbarProps = {
   username?: string | null;
@@ -17,9 +18,13 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
   return (
     <header className="navbar">
       <div className="navbar__inner">
-        <button className="navbar__brand" onClick={() => go("/home")} type="button" aria-label="Ir a Home">
-          <span className="navbar__brandDot" aria-hidden="true" />
-          {t("app.brand")}
+        <button
+          className="navbar__brand"
+          onClick={() => go("/home")}
+          type="button"
+          aria-label="Ir a Home"
+        >
+          <img src={logo} alt="GameY" className="navbar__logo" />
         </button>
 
         <div className="navbar__right">

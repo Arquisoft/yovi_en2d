@@ -89,24 +89,18 @@ body{
   gap: 14px;
 }
 
+.navbar__logo{
+  height:40px;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,.35));
+}
+
 .navbar__brand{
   display:flex;
   align-items:center;
-  gap:10px;
-  border: 1px solid var(--stroke);
-  background: var(--panel);
-  color: var(--text);
-  border-radius: var(--r2);
-  padding: 10px 12px;
-  font-weight: 900;
-  letter-spacing: .2px;
-  cursor: pointer;
-}
-
-.navbar__brandDot{
-  width:10px; height:10px; border-radius:999px;
-  background: var(--aqua);
-  box-shadow: 0 0 18px rgba(67,195,221,.55);
+  border:none;
+  background:transparent;
+  padding:0;
+  cursor:pointer;
 }
 
 .navbar__right{
@@ -173,6 +167,14 @@ body{
   box-shadow: var(--shadow);
 }
 
+.hero__top{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+
 .hero__badge{
   display:inline-flex;
   align-items:center;
@@ -184,6 +186,16 @@ body{
   color: var(--text);
   font-weight: 900;
 }
+
+.hero__logo{
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin: 10px 0 8px;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,.35));
+}
+
 .hero__badge span{
   width:10px; height:10px; border-radius:999px;
   background: var(--violet);
@@ -299,12 +311,17 @@ body{
   text-align: left;
 }
 
-.register-form::before{
-  content: "GameY";
-  font-weight: 1000;
-  font-size: 22px;
-  letter-spacing: .3px;
-  margin-bottom: 4px;
+.register-toprow{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  margin-bottom:10px;
+}
+
+.logo{
+  height: 190px;
+  width: auto;
+  object-fit: contain;
 }
 
 .form-group{
@@ -405,9 +422,3 @@ body{
   outline-offset: -3px;
 }
 
-.register-toprow{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
