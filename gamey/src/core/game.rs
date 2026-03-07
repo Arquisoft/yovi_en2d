@@ -453,14 +453,17 @@ impl TryFrom<YEN> for GameY {
     fn try_from(game: YEN) -> Result<Self> {
         let mut ygame = GameY::new(game.size());
         let rows: Vec<&str> = game.layout().split('/').collect();
+
         if rows.len() as u32 != game.size() {
             return Err(GameYError::InvalidYENLayout {
                 expected: game.size(),
                 found: rows.len() as u32,
             });
         }
+
         for (row, row_str) in rows.iter().enumerate() {
             let cells: Vec<char> = row_str.chars().collect();
+
             if cells.len() as u32 != row as u32 + 1 {
                 return Err(GameYError::InvalidYENLayoutLine {
                     expected: row as u32 + 1,
@@ -468,23 +471,33 @@ impl TryFrom<YEN> for GameY {
                     line: row as u32,
                 });
             }
+
             for (col, cell) in cells.iter().enumerate() {
                 let x = game.size() - 1 - (row as u32);
                 let y = col as u32;
                 let z = game.size() - 1 - x - y;
                 let coords = Coordinates::new(x, y, z);
+
                 match cell {
                     'B' => {
-                        ygame.add_move(Movement::Placement {
-                            player: PlayerId::new(0),
-                            coords,
-                        })?;
+                        let set_idx = ygame.register_piece(PlayerId::new(0), coords);
+                        let won =
+                            ygame.connect_neighbors_and_check_win(coords, PlayerId::new(0), set_idx);
+                        if won {
+                            ygame.status = GameStatus::Finished {
+                                winner: PlayerId::new(0),
+                            };
+                        }
                     }
                     'R' => {
-                        ygame.add_move(Movement::Placement {
-                            player: PlayerId::new(1),
-                            coords,
-                        })?;
+                        let set_idx = ygame.register_piece(PlayerId::new(1), coords);
+                        let won =
+                            ygame.connect_neighbors_and_check_win(coords, PlayerId::new(1), set_idx);
+                        if won {
+                            ygame.status = GameStatus::Finished {
+                                winner: PlayerId::new(1),
+                            };
+                        }
                     }
                     '.' => {}
                     _ => {
@@ -497,6 +510,24 @@ impl TryFrom<YEN> for GameY {
                 }
             }
         }
+
+        if !ygame.check_game_over() {
+            let next_player = match game.turn() {
+                0 => PlayerId::new(0),
+                1 => PlayerId::new(1),
+                other => {
+                    return Err(GameYError::SerdeError {
+                        error: serde_json::Error::io(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            format!("Invalid turn value in YEN: {}", other),
+                        )),
+                    });
+                }
+            };
+
+            ygame.status = GameStatus::Ongoing { next_player };
+        }
+
         Ok(ygame)
     }
 }

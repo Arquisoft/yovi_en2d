@@ -71,7 +71,17 @@ app.post("/game/pvb/move", async (req, res) => {
 
   try {
     const response = await axios.post(route, { yen, row, col }); // NOSONAR
-    return res.status(200).json({ ok: true, yen: response.data });
+
+    // Rust returns: { yen, finished, winner, winning_edges }
+    const payload = response.data || {};
+
+    return res.status(200).json({
+      ok: true,
+      yen: payload.yen ?? payload, // fallback
+      finished: payload.finished === true,
+      winner: payload.winner ?? null,
+      winning_edges: payload.winning_edges ?? [],
+    });
   } catch (error) {
     return forwardAxiosError(res, error, "Game server unavailable");
   }

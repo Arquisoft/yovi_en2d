@@ -1,12 +1,20 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import { useI18n } from "./i18n/I18nProvider";
 
 type BotId = "random_bot" | "smart_bot";
+type WinningEdge = [[number, number], [number, number]];
 
 type GatewayResponse =
-  | { ok: true; yen?: any; message?: string }
+  | {
+      ok: true;
+      yen?: any;
+      finished?: boolean;
+      winner?: string | null;
+      winning_edges?: WinningEdge[];
+      message?: string;
+    }
   | { ok: false; error: string; details?: any };
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
@@ -40,77 +48,14 @@ function useWindowSize() {
   return size;
 }
 
-function computeWinner(layoutMatrix: string[][], token: string): string | null {
-  const n = layoutMatrix.length;
-  if (n === 0) return null;
-
-  const key = (r: number, c: number) => `${r},${c}`;
-
-  const inBounds = (r: number, c: number) =>
-    r >= 0 && r < n && c >= 0 && c < (layoutMatrix[r]?.length ?? 0);
-
-  const neighbors = (r: number, c: number) => {
-    const cand: Array<[number, number]> = [
-      [r, c - 1],
-      [r, c + 1],
-      [r - 1, c - 1],
-      [r - 1, c],
-      [r + 1, c],
-      [r + 1, c + 1],
-    ];
-    return cand.filter(([rr, cc]) => inBounds(rr, cc));
-  };
-
-  const visited = new Set<string>();
-
-  for (let r = 0; r < n; r++) {
-    for (let c = 0; c < (layoutMatrix[r]?.length ?? 0); c++) {
-      if (layoutMatrix[r][c] !== token) continue;
-      const k = key(r, c);
-      if (visited.has(k)) continue;
-
-      let touchesLeft = false;
-      let touchesRight = false;
-      let touchesBottom = false;
-
-      const queue: Array<[number, number]> = [[r, c]];
-      visited.add(k);
-
-      while (queue.length > 0) {
-        const [rr, cc] = queue.shift()!;
-
-        if (cc === 0) touchesLeft = true;
-        if (cc === layoutMatrix[rr].length - 1) touchesRight = true;
-        if (rr === n - 1) touchesBottom = true;
-
-        if (touchesLeft && touchesRight && touchesBottom) return token;
-
-        for (const [nr, nc] of neighbors(rr, cc)) {
-          if (layoutMatrix[nr][nc] !== token) continue;
-          const nk = key(nr, nc);
-          if (visited.has(nk)) continue;
-          visited.add(nk);
-          queue.push([nr, nc]);
-        }
-      }
-    }
-  }
-
-  return null;
-}
-
-function computeGameResult(layoutMatrix: string[][], players: string[]) {
-  const p0 = players?.[0] ?? "B";
-  const p1 = players?.[1] ?? "R";
-
-  const w0 = computeWinner(layoutMatrix, p0);
-  if (w0) return { finished: true, winner: w0 };
-
-  const w1 = computeWinner(layoutMatrix, p1);
-  if (w1) return { finished: true, winner: w1 };
-
-  const anyEmpty = layoutMatrix.some((row) => row.some((cell) => cell === "."));
-  return { finished: !anyEmpty, winner: null as string | null };
+function normalizeEdges(edgesRaw: any): WinningEdge[] {
+  if (!Array.isArray(edgesRaw)) return [];
+  return edgesRaw
+    .filter((e: any) => Array.isArray(e) && e.length === 2 && Array.isArray(e[0]) && Array.isArray(e[1]))
+    .map((e: any) => [
+      [Number(e[0][0]), Number(e[0][1])],
+      [Number(e[1][0]), Number(e[1][1])],
+    ]);
 }
 
 const Game: React.FC = () => {
@@ -138,10 +83,28 @@ const Game: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // FIX: use both a ref (always current, safe inside async closures) and state
+  // (drives re-renders for color display). The ref solves the stale closure problem
+  // where async functions capture fixedPlayers as null even after setFixedPlayers was called.
+  const [fixedPlayers, setFixedPlayersState] = useState<[string, string] | null>(null);
+  const fixedPlayersRef = useRef<[string, string] | null>(null);
+
+  const setFixedPlayers = (p: [string, string]) => {
+    fixedPlayersRef.current = p;
+    setFixedPlayersState(p);
+  };
+
   const { w: winW, h: winH } = useWindowSize();
 
   const headerRef = React.useRef<HTMLDivElement | null>(null);
   const [headerH, setHeaderH] = useState(0);
+
+  const [winOverlay, setWinOverlay] = useState<{
+    winner: string;
+    edges: WinningEdge[];
+  } | null>(null);
+
+  const finishTimerRef = React.useRef<number | null>(null);
 
   useEffect(() => {
     const el = headerRef.current;
@@ -155,6 +118,24 @@ const Game: React.FC = () => {
     return () => ro.disconnect();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (finishTimerRef.current !== null) {
+        window.clearTimeout(finishTimerRef.current);
+        finishTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Helper: extract [humanToken, botToken] from a YEN object
+  const extractPlayers = (nextYen: any): [string, string] => {
+    const p = nextYen?.players;
+    if (Array.isArray(p) && p.length >= 2) {
+      return [String(p[0]), String(p[1])];
+    }
+    return ["B", "R"];
+  };
+
   const boardSize = yen?.size ?? 7;
 
   const layoutMatrix = useMemo(() => {
@@ -162,8 +143,15 @@ const Game: React.FC = () => {
     return parseLayout(yen.layout);
   }, [yen]);
 
-  const humanToken = useMemo(() => (yen?.players?.[0] ? String(yen.players[0]) : "B"), [yen]);
-  const botToken = useMemo(() => (yen?.players?.[1] ? String(yen.players[1]) : "R"), [yen]);
+  const humanToken = useMemo(() => {
+    if (fixedPlayers) return fixedPlayers[0];
+    return yen?.players?.[0] ? String(yen.players[0]) : "B";
+  }, [yen, fixedPlayers]);
+
+  const botToken = useMemo(() => {
+    if (fixedPlayers) return fixedPlayers[1];
+    return yen?.players?.[1] ? String(yen.players[1]) : "R";
+  }, [yen, fixedPlayers]);
 
   const boardWidth = 540;
   const padding = 50;
@@ -192,23 +180,45 @@ const Game: React.FC = () => {
     return !!rrow && rrow[col] === ".";
   };
 
-  const goFinishedIfNeeded = (nextYen: any) => {
-    const nextLayout = nextYen?.layout ? parseLayout(nextYen.layout) : [];
-    const players = (nextYen?.players ?? [humanToken, botToken]).map((x: any) => String(x));
-    const { finished, winner } = computeGameResult(nextLayout, players);
+  const clearPendingFinish = () => {
+    if (finishTimerRef.current !== null) {
+      window.clearTimeout(finishTimerRef.current);
+      finishTimerRef.current = null;
+    }
+  };
 
+  const applyFinishFromGateway = (payload: any, playersFixed: [string, string]) => {
+    const finished = typeof payload?.finished === "boolean" ? payload.finished : false;
     if (!finished) return;
 
-    const youWin = winner === String(players[0]);
-    navigate("/game/finished", {
-      replace: true,
-      state: { result: winner ? (youWin ? "win" : "lost") : "draw" },
-    });
+    const winnerRaw = payload?.winner ?? null;
+    const winner = winnerRaw == null ? null : String(winnerRaw);
+
+    const edges = normalizeEdges(payload?.winning_edges);
+
+    if (winner && edges.length > 0) setWinOverlay({ winner, edges });
+    else setWinOverlay(null);
+
+    clearPendingFinish();
+
+    const youWin = winner ? winner === playersFixed[0] : false;
+
+    finishTimerRef.current = window.setTimeout(() => {
+      navigate("/game/finished", {
+        replace: true,
+        state: { result: winner ? (youWin ? "win" : "lost") : "draw" },
+      });
+    }, winner ? 900 : 350);
   };
 
   const newGame = async () => {
     setBusy(true);
     setError(null);
+    setWinOverlay(null);
+    clearPendingFinish();
+
+    fixedPlayersRef.current = null;
+    setFixedPlayersState(null);
 
     try {
       const res = await fetch(`${API_URL}/game/new`, {
@@ -218,12 +228,17 @@ const Game: React.FC = () => {
       });
 
       const data = await readGatewayResponse(res);
-
       if (!res.ok || !data.ok) throw new Error(!data.ok ? data.error : "Game creation failed");
 
-      setYen(data.yen);
+      const nextYen = (data as any).yen;
+      const p = extractPlayers(nextYen);
+
+      // setFixedPlayers updates BOTH the ref (immediately) and the state (next render)
+      setFixedPlayers(p);
+      setYen(nextYen);
       setSelected(null);
-      goFinishedIfNeeded(data.yen);
+
+      applyFinishFromGateway(data, p);
     } catch (e: any) {
       setError(e?.message ?? "Game creation failed");
     } finally {
@@ -247,12 +262,17 @@ const Game: React.FC = () => {
       });
 
       const data = await readGatewayResponse(res);
-
       if (!res.ok || !data.ok) throw new Error(!data.ok ? data.error : "Backend error");
 
-      setYen(data.yen);
+      const nextYen = (data as any).yen;
+
+      const p: [string, string] = fixedPlayersRef.current ?? extractPlayers(nextYen);
+      if (!fixedPlayersRef.current) setFixedPlayers(p);
+
+      setYen(nextYen);
       setSelected(null);
-      goFinishedIfNeeded(data.yen);
+
+      applyFinishFromGateway(data, p);
     } catch (e: any) {
       setError(e?.message ?? "Backend error");
     } finally {
@@ -261,6 +281,12 @@ const Game: React.FC = () => {
   };
 
   if (!username) return null;
+
+  const overlayStroke = (token: string) => {
+    if (token === humanToken) return "#1e88e5";
+    if (token === botToken) return "#d32f2f";
+    return "#111";
+  };
 
   return (
     <div className="page" style={{ height: "100dvh", overflow: "auto", display: "flex", flexDirection: "column" }}>
@@ -310,9 +336,9 @@ const Game: React.FC = () => {
           >
             {t("game.back")}
           </button>
-          <h1 style={{ margin: 0, textAlign: "center", paddingTop: 6 }}>
-            {t("app.brand")}
-          </h1>
+
+          <h1 style={{ margin: 0, textAlign: "center", paddingTop: 6 }}>{t("app.brand")}</h1>
+
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: 10 }}>
             <button
               onClick={newGame}
@@ -373,6 +399,35 @@ const Game: React.FC = () => {
             preserveAspectRatio="xMidYMid meet"
             style={{ display: "block", touchAction: "manipulation" }}
           >
+            {/* Winner overlay */}
+            {winOverlay?.edges?.map(([[r1, c1], [r2, c2]], i) => {
+              const row1 = layoutMatrix[r1];
+              const row2 = layoutMatrix[r2];
+              if (!row1 || !row2) return null;
+
+              const offsetX1 = padding + ((boardSize - row1.length) * cellSpacing) / 2;
+              const offsetX2 = padding + ((boardSize - row2.length) * cellSpacing) / 2;
+
+              const x1 = offsetX1 + c1 * cellSpacing;
+              const y1 = padding + r1 * rowHeight;
+              const x2 = offsetX2 + c2 * cellSpacing;
+              const y2 = padding + r2 * rowHeight;
+
+              return (
+                <line
+                  key={`wedge-${i}`}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke={overlayStroke(winOverlay.winner)}
+                  strokeWidth={Math.max(3, r * 0.95)}
+                  strokeLinecap="round"
+                  opacity={0.85}
+                />
+              );
+            })}
+
             {layoutMatrix.map((row, rowIndex) => {
               const offsetX = padding + ((boardSize - row.length) * cellSpacing) / 2;
 
