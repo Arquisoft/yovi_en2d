@@ -1,9 +1,12 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const User = require('./models/User');
+const axios = require('axios');
+
+const AuthUser = require('./models/AuthUser');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES = process.env.JWT_EXPIRES || '24h';
+const USERS_SERVICE_URL = process.env.USERS_SERVICE_URL;
 
 
 // ================= REGISTER =================
@@ -22,8 +25,7 @@ const register = async (req, res) => {
             });
         }
 
-        // check if exists
-        const existingUser = await User.findOne({ username });
+        const existingUser = await AuthUser.findOne({ username });
 
         if (existingUser) {
 
@@ -33,18 +35,22 @@ const register = async (req, res) => {
             });
         }
 
-        // hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const user = new User({
+        const user = new AuthUser({
 
             username,
-            email,
             password: hashedPassword
 
         });
 
         await user.save();
+
+        // create user profile in users-service
+        await axios.post(`${USERS_SERVICE_URL}/createuser`, {
+            username,
+            email
+        });
 
         res.status(201).json({
 
@@ -80,7 +86,7 @@ const login = async (req, res) => {
             });
         }
 
-        const user = await User.findOne({ username });
+        const user = await AuthUser.findOne({ username });
 
         if (!user) {
 
@@ -102,7 +108,6 @@ const login = async (req, res) => {
             });
         }
 
-        // CREATE JWT
         const token = jwt.sign(
 
             {
