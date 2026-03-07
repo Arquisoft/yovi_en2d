@@ -457,6 +457,10 @@ const Game: React.FC = () => {
                       if (!clickable) return;
                       setSelected({ row: rowIndex, col: colIndex });
                     }}
+                    onDoubleClick={() => {
+                      if (!clickable) return;
+                      sendMove({ row: rowIndex, col: colIndex });
+                    }}
                     style={{ cursor: clickable ? "pointer" : "default" }}
                   />
                 );

@@ -49,6 +49,12 @@ export const translations: Record<Lang, Dict> = {
     "game.ok": "Conectado correctamente → {msg}",
     "game.fail": "Error de conexión → {msg}",
     "game.back": "Volver a Home",
+
+    // Game Ends
+    "game.finished.win": "Partida terminada: Has ganado",
+    "game.finished.lost": "Partida terminada: Has perdido",
+    "game.finished.draw": "Partida terminada: Empate",
+    "game.finished.back": "Volver al juego",
   },
 
   en: {
@@ -73,8 +79,7 @@ export const translations: Record<Lang, Dict> = {
     // Home
     "home.badge": "You are in Gamey - Yovi_EN2C",
     "home.welcome": "Hello {username}",
-    "home.subtitle":
-      "Play the Game of Y",
+    "home.subtitle": "Play the Game of Y",
     "home.start": "Start game",
     "home.goBoard": "Go to board",
     "home.changeUser": "Change user",
@@ -97,5 +102,11 @@ export const translations: Record<Lang, Dict> = {
     "game.ok": "Connected → {msg}",
     "game.fail": "Connection error → {msg}",
     "game.back": "Back To Home",
+
+    // Game Ends
+    "game.finished.win": "Game Finished: You win",
+    "game.finished.lost": "Game Finished: You lost",
+    "game.finished.draw": "Game Finished: Draw",
+    "game.finished.back": "Back to game",
   },
 };

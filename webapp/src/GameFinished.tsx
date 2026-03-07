@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
+import { useI18n } from "./i18n/I18nProvider";
 
 type FinishedState = {
   result?: "win" | "lost" | "draw";
 };
 
 const GameFinished: React.FC = () => {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -26,7 +28,11 @@ const GameFinished: React.FC = () => {
   if (!username || !st?.result) return null;
 
   const text =
-    st.result === "win" ? "Game Finished: You win" : st.result === "lost" ? "Game Finished: You lost" : "Game Finished: Draw";
+  st.result === "win"
+    ? t("game.finished.win")
+    : st.result === "lost"
+    ? t("game.finished.lost")
+    : t("game.finished.draw");
 
   return (
     <div className="page">
@@ -47,7 +53,7 @@ const GameFinished: React.FC = () => {
               cursor: "pointer",
             }}
           >
-            Back to game
+            {t("game.finished.back")}
           </button>
         </div>
       </main>
