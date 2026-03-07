@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useI18n } from "./i18n/I18nProvider";
 import logo from "../img/logo.png";
 
-const RegisterForm: React.FC = () => {
+const RegistrationForm: React.FC = () => {
   const navigate = useNavigate();
   const { lang, setLang, t } = useI18n();
 
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [responseMessage, setResponseMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -18,30 +20,39 @@ const RegisterForm: React.FC = () => {
     setError(null);
 
     if (!username.trim()) {
-      setError(t("register.error.empty"));
+      setError(t("registration.error.username"));
+      return;
+    }
+
+    if (!password.trim()) {
+      setError(t("registration.error.password"));
       return;
     }
 
     setLoading(true);
     try {
       const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8080";
+
       const res = await fetch(`${API_URL}/createuser`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({
+          username,
+          email: email.trim() || undefined,
+          password,
+        }),
       });
 
       const data = await res.json();
 
-      if (res.ok) {
+      if (res.ok && data.success) {
         setResponseMessage(data.message);
-        localStorage.setItem("username", username);
-        navigate("/home", { state: { username } });
+        navigate("/", { replace: true });
       } else {
-        setError(data.error || t("register.error.server"));
+        setError(data.error || t("registration.error.generic"));
       }
     } catch (err: any) {
-      setError(err.message || t("register.error.network"));
+      setError(err.message || t("registration.error.network"));
     } finally {
       setLoading(false);
     }
@@ -49,14 +60,9 @@ const RegisterForm: React.FC = () => {
 
   return (
     <div className="auth-wrapper">
-      <form onSubmit={handleSubmit} className="register-form" aria-label="Registro de usuario">
-
+      <form onSubmit={handleSubmit} className="register-form" aria-label={t("registration.aria")}>
         <div className="register-toprow">
-          <img
-            src={logo}
-            alt="GameY"
-            className="logo"
-          />
+          <img src={logo} alt="GameY" className="logo" />
           <div className="lang-toggle" role="group" aria-label={t("common.language")}>
             <button
               type="button"
@@ -79,21 +85,51 @@ const RegisterForm: React.FC = () => {
         </div>
 
         <div className="form-group">
-          <label htmlFor="username">{t("register.label")}</label>
+          <label htmlFor="register-username">{t("registration.username")}</label>
           <input
             type="text"
-            id="username"
+            id="register-username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="form-input"
-            placeholder={t("register.placeholder")}
-            autoComplete="nickname"
+            placeholder={t("registration.username")}
+            autoComplete="username"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="register-email">{t("registration.email")}</label>
+          <input
+            type="email"
+            id="register-email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="form-input"
+            placeholder={t("registration.email")}
+            autoComplete="email"
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="register-password">{t("registration.password")}</label>
+          <input
+            type="password"
+            id="register-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="form-input"
+            placeholder={t("registration.password")}
+            autoComplete="new-password"
           />
         </div>
 
         <button type="submit" className="submit-button" disabled={loading}>
-          {loading ? t("register.loading") : t("register.button")}
+          {loading ? t("registration.loading") : t("registration.button")}
         </button>
+
+        <div style={{ marginTop: 12, textAlign: "center" }}>
+          <Link to="/">{t("registration.goLogin")}</Link>
+        </div>
 
         {responseMessage && (
           <div className="success-message" style={{ marginTop: 8 }}>
@@ -111,4 +147,4 @@ const RegisterForm: React.FC = () => {
   );
 };
 
-export default RegisterForm;
+export default RegistrationForm;
