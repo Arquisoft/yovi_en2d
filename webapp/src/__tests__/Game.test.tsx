@@ -2,34 +2,54 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "@testing-library/jest-dom";
+import { MemoryRouter } from "react-router-dom";
 import Game from "../Game";
+import { I18nProvider } from "../i18n/I18nProvider";
+
+function renderGame() {
+  return render(
+    <I18nProvider>
+      <MemoryRouter initialEntries={[{ pathname: "/game", state: { username: "Pablo" } }]}>
+        <Game />
+      </MemoryRouter>
+    </I18nProvider>
+  );
+}
 
 describe("Game component", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    localStorage.setItem("username", "Pablo");
+
+    global.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as any;
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
-  test("renders title and buttons", () => {
-    render(<Game />);
+  test("renders title and action buttons", () => {
+    renderGame();
 
     expect(
       screen.getByRole("heading", { name: /GameY/i })
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: /Nueva partida/i })
+      screen.getByRole("button", { name: /Nueva partida|New game/i })
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: /Enviar jugada/i })
+      screen.getByRole("button", { name: /Enviar jugada|Send move/i })
     ).toBeInTheDocument();
 
     expect(
-      screen.getByRole("button", { name: /Comprobar conexión/i })
+      screen.getByRole("button", { name: /Volver a Home|Back To Home/i })
     ).toBeInTheDocument();
   });
 
@@ -43,20 +63,24 @@ describe("Game component", () => {
           ok: true,
           yen: {
             size: 7,
-            layout:
-              "......./......./......./......./......./......./.......",
+            players: ["B", "R"],
+            layout: "......./......./......./......./......./......./.......",
           },
         }),
     } as unknown as Response);
 
-    render(<Game />);
+    renderGame();
 
     await user.click(
-      screen.getByRole("button", { name: /Nueva partida/i })
+      screen.getByRole("button", { name: /Nueva partida|New game/i })
     );
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    await waitFor(() => {
+      expect(document.querySelectorAll("circle").length).toBeGreaterThan(0);
     });
   });
 
@@ -72,24 +96,22 @@ describe("Game component", () => {
         }),
     } as unknown as Response);
 
-    render(<Game />);
+    renderGame();
 
     await user.click(
-      screen.getByRole("button", { name: /Nueva partida/i })
+      screen.getByRole("button", { name: /Nueva partida|New game/i })
     );
 
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Game server unavailable/i)
-      ).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText(/Game server unavailable/i)
+    ).toBeInTheDocument();
   });
 
   test("does not send move without selection", () => {
-    render(<Game />);
+    renderGame();
 
     const sendButton = screen.getByRole("button", {
-      name: /Enviar jugada/i,
+      name: /Enviar jugada|Send move/i,
     });
 
     expect(sendButton).toBeDisabled();
@@ -105,32 +127,34 @@ describe("Game component", () => {
           ok: true,
           yen: {
             size: 7,
-            layout:
-              "......./......./......./......./......./......./.......",
+            players: ["B", "R"],
+            layout: "......./......./......./......./......./......./.......",
           },
         }),
     } as unknown as Response);
 
-    render(<Game />);
+    renderGame();
 
     await user.click(
-      screen.getByRole("button", { name: /Nueva partida/i })
+      screen.getByRole("button", { name: /Nueva partida|New game/i })
     );
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    const circles = document.querySelectorAll("circle");
-    expect(circles.length).toBeGreaterThan(0);
-
-    await user.click(circles[0]);
-
-    const sendButton = screen.getByRole("button", {
-      name: /Enviar jugada/i,
+    await waitFor(() => {
+      expect(document.querySelectorAll("circle").length).toBeGreaterThan(0);
     });
 
-    expect(sendButton).not.toBeDisabled();
+    const circles = document.querySelectorAll("circle");
+    await user.click(circles[0]);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /Enviar jugada|Send move/i })
+      ).not.toBeDisabled();
+    });
   });
 
   test("sends move successfully", async () => {
@@ -138,7 +162,6 @@ describe("Game component", () => {
 
     global.fetch = vi
       .fn()
-      // new game
       .mockResolvedValueOnce({
         ok: true,
         text: async () =>
@@ -146,12 +169,11 @@ describe("Game component", () => {
             ok: true,
             yen: {
               size: 7,
-              layout:
-                "......./......./......./......./......./......./.......",
+              players: ["B", "R"],
+              layout: "......./......./......./......./......./......./.......",
             },
           }),
       })
-      // send move
       .mockResolvedValueOnce({
         ok: true,
         text: async () =>
@@ -159,27 +181,37 @@ describe("Game component", () => {
             ok: true,
             yen: {
               size: 7,
-              layout:
-                "B....../......./......./......./......./......./.......",
+              players: ["B", "R"],
+              layout: "B....../......./......./......./......./......./.......",
             },
           }),
       });
 
-    render(<Game />);
+    renderGame();
 
     await user.click(
-      screen.getByRole("button", { name: /Nueva partida/i })
+      screen.getByRole("button", { name: /Nueva partida|New game/i })
     );
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
+    await waitFor(() => {
+      expect(document.querySelectorAll("circle").length).toBeGreaterThan(0);
+    });
+
     const circles = document.querySelectorAll("circle");
     await user.click(circles[0]);
 
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /Enviar jugada|Send move/i })
+      ).not.toBeDisabled();
+    });
+
     await user.click(
-      screen.getByRole("button", { name: /Enviar jugada/i })
+      screen.getByRole("button", { name: /Enviar jugada|Send move/i })
     );
 
     await waitFor(() => {
@@ -192,7 +224,6 @@ describe("Game component", () => {
 
     global.fetch = vi
       .fn()
-      // new game
       .mockResolvedValueOnce({
         ok: true,
         text: async () =>
@@ -200,12 +231,11 @@ describe("Game component", () => {
             ok: true,
             yen: {
               size: 7,
-              layout:
-                "......./......./......./......./......./......./.......",
+              players: ["B", "R"],
+              layout: "......./......./......./......./......./......./.......",
             },
           }),
       })
-      // send move fails
       .mockResolvedValueOnce({
         ok: false,
         text: async () =>
@@ -215,81 +245,35 @@ describe("Game component", () => {
           }),
       });
 
-    render(<Game />);
+    renderGame();
 
     await user.click(
-      screen.getByRole("button", { name: /Nueva partida/i })
+      screen.getByRole("button", { name: /Nueva partida|New game/i })
     );
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
+    await waitFor(() => {
+      expect(document.querySelectorAll("circle").length).toBeGreaterThan(0);
+    });
+
     const circles = document.querySelectorAll("circle");
     await user.click(circles[0]);
 
-    await user.click(
-      screen.getByRole("button", { name: /Enviar jugada/i })
-    );
-
     await waitFor(() => {
       expect(
-        screen.getByText(/Backend error/i)
-      ).toBeInTheDocument();
+        screen.getByRole("button", { name: /Enviar jugada|Send move/i })
+      ).not.toBeDisabled();
     });
-  });
-
-  test("health check success", async () => {
-    const user = userEvent.setup();
-
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: true,
-      text: async () =>
-        JSON.stringify({
-          ok: true,
-          message: "OK",
-        }),
-    } as unknown as Response);
-
-    render(<Game />);
 
     await user.click(
-      screen.getByRole("button", {
-        name: /Comprobar conexión GameY/i,
-      })
+      screen.getByRole("button", { name: /Enviar jugada|Send move/i })
     );
 
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Conectado correctamente/i)
-      ).toBeInTheDocument();
-    });
-  });
-
-  test("health check failure", async () => {
-    const user = userEvent.setup();
-
-    global.fetch = vi.fn().mockResolvedValueOnce({
-      ok: false,
-      text: async () =>
-        JSON.stringify({
-          ok: false,
-          error: "Connection failed",
-        }),
-    } as unknown as Response);
-
-    render(<Game />);
-
-    await user.click(
-      screen.getByRole("button", {
-        name: /Comprobar conexión GameY/i,
-      })
-    );
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Error de conexión/i)
-      ).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText(/Backend error/i)
+    ).toBeInTheDocument();
   });
 });
