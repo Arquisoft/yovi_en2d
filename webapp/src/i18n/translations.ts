@@ -26,11 +26,11 @@ export const translations: Record<Lang, Dict> = {
     "registration.aria": "Registro de usuario",
     "registration.username": "Usuario",
     "registration.email": "Correo electrónico",
-    "registration.password": "Contraseña",
+    "registration.password": "Contraseña", //NOSONAR
     "registration.button": "Registrarse",
     "registration.loading": "Registrando…",
     "registration.error.username": "El nombre de usuario es obligatorio.",
-    "registration.error.password": "La contraseña es obligatoria.",
+    "registration.error.password": "La contraseña es obligatoria.", //NOSONAR
     "registration.error.generic": "Error de registro",
     "registration.error.network": "Error de red",
     "registration.goLogin": "¿Ya tienes cuenta? Volver al login",
@@ -38,11 +38,11 @@ export const translations: Record<Lang, Dict> = {
     // Login
     "login.aria": "Inicio de sesión",
     "login.username": "Usuario",
-    "login.password": "Contraseña",
+    "login.password": "Contraseña", //NOSONAR
     "login.button": "Iniciar sesión",
     "login.loading": "Entrando…",
     "login.error.username": "Por favor, introduce un nombre de usuario.",
-    "login.error.password": "Por favor, introduce una contraseña.",
+    "login.error.password": "Por favor, introduce una contraseña.", //NOSONAR
     "login.error.invalid": "Error de inicio de sesión",
     "login.error.network": "Error de red",
     "login.goRegister": "¿No tienes cuenta? Regístrate",
@@ -103,11 +103,11 @@ export const translations: Record<Lang, Dict> = {
     "registration.aria": "User registration",
     "registration.username": "Username",
     "registration.email": "Email",
-    "registration.password": "Password",
+    "registration.password": "Password", //NOSONAR
     "registration.button": "Register",
     "registration.loading": "Loading...",
     "registration.error.username": "Username is mandatory.",
-    "registration.error.password": "Password is mandatory.",
+    "registration.error.password": "Password is mandatory.", //NOSONAR
     "registration.error.generic": "Registration failed",
     "registration.error.network": "Network error",
     "registration.goLogin": "Already have an account? Back to login",
@@ -115,11 +115,11 @@ export const translations: Record<Lang, Dict> = {
     // Login
     "login.aria": "User login",
     "login.username": "Username",
-    "login.password": "Password",
+    "login.password": "Password", //NOSONAR
     "login.button": "Login",
     "login.loading": "Loading...",
     "login.error.username": "Please enter a username.",
-    "login.error.password": "Please enter a password.",
+    "login.error.password": "Please enter a password.", //NOSONAR
     "login.error.invalid": "Login failed",
     "login.error.network": "Network error",
     "login.goRegister": "Don’t have an account? Register",
