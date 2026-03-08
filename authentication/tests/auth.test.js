@@ -37,8 +37,8 @@ describe('Auth Service', () => {
     const res = await request(app)
       .post('/register')
       .send({
-        username: "testuser3",
-        email: "test3@test.com",
+        username: "testuser4",
+        email: "test4@test.com",
         password: "123456"
       })
 
