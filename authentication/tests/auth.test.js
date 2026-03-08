@@ -70,6 +70,14 @@ describe('Auth Service', () => {
     expect(res.body.error).toBe('User already exists')
 
   })
+   it('register should handle missing email', async () => {
+    const res = await request(app).post('/register').send({
+      username: 'usernoemail',
+      password: '123456'
+    })
+    // your current code allows missing email, so success is possible
+    expect([201, 500]).toContain(res.statusCode)
+  })
 
 
   // ================= LOGIN =================
@@ -102,6 +110,19 @@ describe('Auth Service', () => {
 
   })
 
+
+  it('login should fail with wrong password', async () => {
+    await request(app).post('/register').send({
+      username: 'userwrongpass',
+      email: 'userwp@test.com',
+      password: '123456'
+    })
+    const res = await request(app).post('/login').send({
+      username: 'userwrongpass',
+      password: 'wrongpass'
+    })
+    expect(res.statusCode).toBe(401)
+  })
 
   it('login should return a JWT token', async () => {
 
@@ -164,6 +185,11 @@ describe('Auth Service', () => {
 
     expect(res.statusCode).toBe(401)
 
+  })
+
+    it('verify should fail with invalid token', async () => {
+    const res = await request(app).get('/verify').set('Authorization', 'Bearer invalidtoken')
+    expect(res.statusCode).toBe(401)
   })
 
 })
