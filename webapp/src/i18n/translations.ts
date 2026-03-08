@@ -1,3 +1,5 @@
+/* NOSONAR */
+// Sonar is confusing I18n with credentials 
 export type Lang = "es" | "en";
 
 export type Dict = Record<string, string>;
