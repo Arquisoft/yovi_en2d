@@ -38,6 +38,8 @@ jobs:
 
       - name: Run authentication tests
         run: npm --prefix authentication run test:coverage
+        env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
 
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked
