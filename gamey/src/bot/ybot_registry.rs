@@ -5,7 +5,9 @@
 
 use std::{collections::HashMap, sync::Arc};
 
-use crate::YBot;
+use crate::{MonteCarloBot, YBot};
+use crate::{RandomBot, HeuristicBot, MinimaxBot, AlfaBetaBot};
+use crate::bot_implementations::MonteCarloDifficulty;
 
 /// A registry that stores and manages [`YBot`] implementations.
 ///
@@ -31,9 +33,18 @@ pub struct YBotRegistry {
 impl YBotRegistry {
     /// Creates a new empty registry.
     pub fn new() -> Self {
-        YBotRegistry {
+        let mut registry =YBotRegistry {
             bots: HashMap::new(),
-        }
+        };
+        registry = registry
+            .with_bot(Arc::new(RandomBot))
+            .with_bot(Arc::new(HeuristicBot))
+            .with_bot(Arc::new(MinimaxBot::new(None)))
+            .with_bot(Arc::new(AlfaBetaBot::new(None)))
+            .with_bot(Arc::new(MonteCarloBot::new(MonteCarloDifficulty::Hard)))
+            .with_bot(Arc::new(MonteCarloBot::new(MonteCarloDifficulty::Extreme)));
+
+        registry
     }
 
     /// Adds a bot to the registry and returns the registry for chaining.
@@ -43,6 +54,7 @@ impl YBotRegistry {
         self.bots.insert(bot.name().to_string(), bot);
         self
     }
+
 
     /// Finds a bot by name.
     ///

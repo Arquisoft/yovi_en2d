@@ -16,4 +16,4 @@ pub mod bot_implementations;
 
 pub use ybot::YBot;
 pub use ybot_registry::YBotRegistry;
-pub use bot_implementations::{RandomBot, HeuristicBot};
+pub use bot_implementations::{RandomBot, HeuristicBot, MinimaxBot, AlfaBetaBot, MonteCarloBot};
