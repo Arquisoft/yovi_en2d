@@ -1,6 +1,23 @@
 import { describe, it, expect } from 'vitest'
 import request from 'supertest'
+import mongoose from 'mongoose'
 import app from '../auth-service.js'
+
+let isConnected = false
+
+beforeAll(async () => {
+  if (!isConnected) {
+    const TEST_URI = process.env.MONGODB_URI
+    if (!TEST_URI) {
+      throw new Error('MONGODB_URI not set in environment')
+    }
+    await mongoose.connect(TEST_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    })
+    isConnected = true
+  }
+})
 
 describe('Auth Service', () => {
 
