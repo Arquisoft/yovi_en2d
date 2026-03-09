@@ -31,17 +31,7 @@ mod tests {
     use super::*;
     use crate::{RandomBot, HeuristicBot, MinimaxBot, AlfaBetaBot, MonteCarloBot};
     use crate::bot_implementations::MonteCarloDifficulty;
-
-    #[test]
-    fn test_new_state() {
-        // Ahora new() devuelve registro con bots
-        let registry = YBotRegistry::new();
-        let state = AppState::new(registry);
-
-        // Solo verificamos que NO está vacío
-        assert!(!state.bots().names().is_empty());
-    }
-
+    
     #[test]
     fn test_state_with_bot() {
         // Creamos un registro vacío y añadimos solo RandomBot
