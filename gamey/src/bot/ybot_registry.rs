@@ -56,6 +56,12 @@ impl YBotRegistry {
     }
 
 
+    pub fn new_empty() -> Self {
+        YBotRegistry {
+            bots: HashMap::new(),
+        }
+    }
+
     /// Finds a bot by name.
     ///
     /// Returns `Some(bot)` if a bot with the given name exists, `None` otherwise.
@@ -105,19 +111,21 @@ mod tests {
 
     #[test]
     fn test_new_registry_is_empty() {
-        let registry = YBotRegistry::new();
+        let registry = YBotRegistry::new_empty();  // AHORA SÍ está vacío
         assert!(registry.names().is_empty());
     }
 
     #[test]
-    fn test_default_registry_is_empty() {
+    fn test_default_registry_has_bots() {
         let registry = YBotRegistry::default();
-        assert!(registry.names().is_empty());
+        assert!(!registry.names().is_empty());
+        assert_eq!(registry.names().len(), 6);  // 6 bots
     }
 
     #[test]
     fn test_with_bot_adds_bot() {
-        let registry = YBotRegistry::new().with_bot(Arc::new(MockBot::new("test_bot")));
+        let registry = YBotRegistry::new_empty()  // EMPEZAR VACÍO
+            .with_bot(Arc::new(MockBot::new("test_bot")));
 
         assert_eq!(registry.names().len(), 1);
         assert!(registry.find("test_bot").is_some());
@@ -125,7 +133,7 @@ mod tests {
 
     #[test]
     fn test_with_bot_chaining() {
-        let registry = YBotRegistry::new()
+        let registry = YBotRegistry::new_empty()  // EMPEZAR VACÍO
             .with_bot(Arc::new(MockBot::new("bot1")))
             .with_bot(Arc::new(MockBot::new("bot2")));
 
@@ -133,6 +141,19 @@ mod tests {
         assert!(registry.find("bot1").is_some());
         assert!(registry.find("bot2").is_some());
     }
+
+    #[test]
+    fn test_duplicate_name_overwrites() {
+        let bot1 = Arc::new(MockBot::new("same_name"));
+        let bot2 = Arc::new(MockBot::new("same_name"));
+
+        let registry = YBotRegistry::new_empty()  // EMPEZAR VACÍO
+            .with_bot(bot1)
+            .with_bot(bot2);
+
+        assert_eq!(registry.names().len(), 1);
+    }
+
 
     #[test]
     fn test_find_nonexistent_bot_returns_none() {
@@ -147,13 +168,4 @@ mod tests {
         assert!(registry.find("random_bot").is_some());
     }
 
-    #[test]
-    fn test_duplicate_name_overwrites() {
-        let bot1 = Arc::new(MockBot::new("same_name"));
-        let bot2 = Arc::new(MockBot::new("same_name"));
-
-        let registry = YBotRegistry::new().with_bot(bot1).with_bot(bot2);
-
-        assert_eq!(registry.names().len(), 1);
-    }
 }
