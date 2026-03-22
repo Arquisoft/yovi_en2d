@@ -21,6 +21,8 @@ const LOGIN_USER_URL = `${USERS_BASE_URL}/login`;
 const PVB_MOVE_ROUTES = {
   random_bot: `${GAMEY_BASE_URL}/v1/game/pvb/random_bot`,
   smart_bot: `${GAMEY_BASE_URL}/v1/game/pvb/smart_bot`,
+  monte_carlo_hard:    `${GAMEY_BASE_URL}/v1/game/pvb/monte_carlo_hard`,
+  monte_carlo_extreme: `${GAMEY_BASE_URL}/v1/game/pvb/monte_carlo_extreme`,
 };
 
 const BOT_CHOOSE_ROUTES = {
