@@ -2,65 +2,72 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useI18n } from "./i18n/I18nProvider";
 import logo from "../img/logo.png";
-import LanguageToggle from "./LanguageToggle";
+import LanguageToggle from "./LanguageToggle.tsx";
 
 type NavbarProps = {
   username?: string | null;
   onLogout?: () => void;
+  title?: string;
 };
 
-const Navbar: React.FC<NavbarProps> = ({ username, onLogout }) => {
+const Navbar: React.FC<NavbarProps> = ({ username, onLogout, title }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useI18n();
 
-  const go = (path: string) => navigate(path);
+  const go = (path: string) => navigate(path, { state: { username } });
 
   return (
-    <header className="navbar">
-      <div className="navbar__inner">
-        <button
-          className="navbar__brand"
-          onClick={() => go("/home")}
-          type="button"
-          aria-label="Ir a Home"
-        >
-          <img src={logo} alt="GameY" className="navbar__logo" />
-        </button>
+    <>
+      <header className="site-header">
+        <div className="site-header__inner">
+          <button
+            style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
+            onClick={() => go("/home")}
+            aria-label="Go home"
+          >
+            <img src={logo} alt="GameY" className="site-header__logo" />
+          </button>
 
-        <div className="navbar__right">
-          <div className="navbar__user" aria-label="Usuario actual">
-            👤 {t("common.user")}: {username || "—"}
-          </div>
+          <span className="site-header__title">
+            {title ?? t("app.brand")}
+          </span>
+
+          {username && (
+            <span className="nav-user" title={username}>
+              👤 {username}
+            </span>
+          )}
 
           <LanguageToggle />
 
-          <nav className="navbar__actions" aria-label="Navegación principal">
+          <nav className="site-header__nav" aria-label="Main navigation">
             <button
-              type="button"
-              className="navbtn"
-              aria-current={location.pathname === "/home" ? "page" : undefined}
+              className={`nav-link${location.pathname === "/home" ? " nav-link--active" : ""}`}
               onClick={() => go("/home")}
+              type="button"
             >
               {t("common.home")}
             </button>
-
             <button
-              type="button"
-              className="navbtn"
-              aria-current={location.pathname === "/game" ? "page" : undefined}
+              className={`nav-link${location.pathname.startsWith("/game") ? " nav-link--active" : ""}`}
               onClick={() => go("/game")}
+              type="button"
             >
               {t("common.game")}
             </button>
-
-            <button type="button" className="navbtn navbtn--danger" onClick={onLogout}>
+            <button
+              className="nav-link nav-link--exit"
+              onClick={onLogout}
+              type="button"
+            >
               {t("common.logout")}
             </button>
           </nav>
         </div>
-      </div>
-    </header>
+      </header>
+      <div className="site-header__ribbon" aria-hidden="true" />
+    </>
   );
 };
 

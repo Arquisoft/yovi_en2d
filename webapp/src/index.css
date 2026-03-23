@@ -1,35 +1,6 @@
-/* minimum index.css to not clash with App.css */
-
-html, body, #root {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-}
-
-/* base typography */
-:root {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Links */
-a {
-  color: inherit;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-
-/* Btns */
-button {
-  font: inherit;
-}
+/* Minimal reset — App.css handles all styling */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { min-width: 320px; }
+button { font: inherit; }
+a { color: inherit; text-decoration: none; }
