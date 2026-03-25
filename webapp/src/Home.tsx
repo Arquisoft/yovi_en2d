@@ -4,11 +4,11 @@ import Navbar from "./Navbar.tsx";
 import { useI18n } from "./i18n/I18nProvider";
 
 type Mode = "bot" | "player" | null;
-type BotId = "random_bot" | "smart_bot" | "minimax_bot" | "alfa_beta_bot" | "monte_carlo_hard" | "monte_carlo_extreme";
+type BotId = "random_bot" | "heuristic_bot" | "minimax_bot" | "alfa_beta_bot" | "monte_carlo_hard" | "monte_carlo_extreme";
 
 const BOT_OPTIONS: { value: BotId; labelKey: string }[] = [
   { value: "random_bot",         labelKey: "game.bot.random"    },
-  { value: "smart_bot",          labelKey: "game.bot.smart"     },
+  { value: "heuristic_bot",          labelKey: "game.bot.heuristic"},
   { value: "minimax_bot",        labelKey: "game.bot.minimax"   },
   { value: "alfa_beta_bot",      labelKey: "game.bot.alfabeta"  },
   { value: "monte_carlo_hard",   labelKey: "game.bot.mcHard"    },

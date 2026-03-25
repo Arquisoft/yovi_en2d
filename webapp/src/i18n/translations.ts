@@ -77,7 +77,7 @@ export const translations: Record<Lang, Dict> = {
 
     // Bots
     "game.bot.random": "Bot aleatorio",
-    "game.bot.smart": "Bot inteligente",
+    "game.bot.heuristic": "Bot heurístico",
     "game.bot.minimax": "Bot Minimax",
     "game.bot.alfabeta": "Bot Alfa-Beta",
     "game.bot.mcHard": "Monte Carlo (Difícil)",
@@ -180,7 +180,7 @@ export const translations: Record<Lang, Dict> = {
 
     // Bots
     "game.bot.random": "Random Bot",
-    "game.bot.smart": "Smart Bot",
+    "game.bot.heuristic": "Heuristic Bot",
     "game.bot.minimax": "Minimax Bot",
     "game.bot.alfabeta": "Alpha-Beta Bot",
     "game.bot.mcHard": "Monte Carlo (Hard)",

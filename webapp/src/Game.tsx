@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./Navbar.tsx";
 import { useI18n } from "./i18n/I18nProvider";
 
-type BotId = "random_bot" | "smart_bot" | "minimax_bot" | "alfa_beta_bot" | "monte_carlo_hard" | "monte_carlo_extreme";
+type BotId = "random_bot" | "heuristic_bot" | "minimax_bot" | "alfa_beta_bot" | "monte_carlo_hard" | "monte_carlo_extreme";
 type WinningEdge = [[number, number], [number, number]];
 
 type GatewayResponse =

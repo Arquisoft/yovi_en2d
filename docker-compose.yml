@@ -1,4 +1,22 @@
+version: "3.9"
+
 services:
+  reverse-proxy:
+    image: nginx:latest
+    container_name: reverse-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt/live/gameofy.publicvm.com:/etc/letsencrypt/live/gameofy.publicvm.com:ro
+      - /etc/letsencrypt/archive/gameofy.publicvm.com:/etc/letsencrypt/archive/gameofy.publicvm.com:ro
+    depends_on:
+      - webapp
+      - gateway
+    networks:
+      - monitor-net
+
   users:
     build: ./users
     container_name: users
@@ -14,11 +32,11 @@ services:
     build:
       context: ./webapp
       args:
-        - VITE_API_URL=http://13.60.24.188:8080
+        - VITE_API_URL=https://gameofy.publicvm.com:8080
     container_name: webapp
     image: ghcr.io/arquisoft/yovi_en2c-webapp:latest
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - gateway
     networks:
@@ -28,8 +46,8 @@ services:
     build: ./gateway
     container_name: gateway
     image: ghcr.io/arquisoft/yovi_en2c-gateway:latest
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     environment:
       - USERS_BASE_URL=http://users:3000
       - GAMEY_BASE_URL=http://gamey:4000
@@ -43,8 +61,8 @@ services:
     build: ./gamey
     container_name: gamey
     image: ghcr.io/arquisoft/yovi_en2c-gamey:latest
-    ports:
-      - "4000:4000"
+    expose:
+      - "4000"
     networks:
       - monitor-net
 
