@@ -32,7 +32,7 @@ services:
     build:
       context: ./webapp
       args:
-        - VITE_API_URL=https://gameofy.publicvm.com:8080
+        - VITE_API_URL=/api
     container_name: webapp
     image: ghcr.io/arquisoft/yovi_en2c-webapp:latest
     expose:
