@@ -47,9 +47,6 @@ describe("Game component", () => {
     mockNavigate.mockReset();
 
     global.ResizeObserver = class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
     } as any;
   });
 

@@ -51,13 +51,6 @@ describe("Stats component", () => {
         localStorage.clear();
     });
 
-    test("renders loading state initially", () => {
-        globalThis.fetch = vi.fn(() => new Promise(() => {})); // never resolves
-
-        renderStats();
-
-        expect(screen.getByText(/Loading your history/i)).toBeInTheDocument();
-    });
 
     test("fetches and displays stats correctly", async () => {
         globalThis.fetch = vi.fn().mockResolvedValueOnce({

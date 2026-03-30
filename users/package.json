@@ -20,9 +20,9 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.0.15",
     "mongodb-memory-server": "^11.0.1",
     "supertest": "^7.2.2",
-    "vitest": "^4.0.15"
+    "vitest": "4.0.18",
+    "@vitest/coverage-v8": "^4.0.18"
   }
 }
