@@ -76,6 +76,11 @@ export const translations: Record<Lang, Dict> = {
     "home.config.bot": "Bot",
     "home.config.boardSize": "Tamaño del tablero",
 
+    "home.chooseOpponent" : "Escoge a tu rival y comienza la partida.",
+
+"home.instructions.title": "Cómo jugar",
+"home.instructions.description": "El Juego de la Y consiste en hacer una línea que conecte los tres lados de un tiángulo. Haz click en un círculo para seleccionalo. Confirma tu selección y haz tu movimiento ¡Derrota a tu oponente!",
+
     // Bots
     "game.bot.random": "Bot aleatorio",
     "game.bot.heuristic": "Bot heurístico",
@@ -194,6 +199,10 @@ export const translations: Record<Lang, Dict> = {
     "home.config.playerTitle": "MATCH SETTINGS",
     "home.config.bot": "Bot",
     "home.config.boardSize": "Board size",
+    "home.chooseOpponent" : "Choose your opponent and start the game.",
+    "home.instructions.title": "How to Play",
+    "home.instructions.description": "The Game of Y consists on making a line connecting the three sides of a triangle. Click on a circle to select it. Confirm your choice to make your move. Beat your opponent!",
+
 
     // Bots
     "game.bot.random": "Random Bot",
