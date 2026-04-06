@@ -219,6 +219,6 @@ This approach ensures that all internal services communicate over HTTP, while ex
 | **ADR-002** | MongoDB for User Data | Schema flexibility, Node.js integration | Implemented
 | **ADR-003** | Three-Service Architecture | Technology constraints (TypeScript + Rust) | Implemented
 | **ADR-004** | API Gateway | Security, single entry point | Implemented
-| **ADR-005** | Strategy Pattern for AI | Extensibility for multiple strategies | In Progress
+| **ADR-005** | Strategy Pattern for AI | Extensibility for multiple strategies | Implemented
 | **ADR-006** | Reverse Proxy + HTTPS | Security and centralized routing | Implemented
 |===
