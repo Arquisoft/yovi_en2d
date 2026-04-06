@@ -54,17 +54,38 @@ languages of English and Spanish, with architecture designed for easy addition o
 
 ==== Network Security
 
-With the addition of a **reverse proxy** (e.g., Nginx) in front of the API Gateway:
-
 |=== 
 | Layer | Measure | Purpose
-| **Transport** | HTTPS terminated at Nginx Reverse Proxy | Encrypt all external traffic
-| **Internal Traffic** | HTTP from Proxy → API Gateway → Services | Simplified internal routing; services never exposed externally
+| **Transport** | HTTPS with TLS 1.3 | Encrypt all external traffic
 | **Network isolation** | Docker networks (frontend/backend) | Prevent direct backend access
-| **Firewall** | Only ports 22 (SSH) and 443 (HTTPS) exposed externally | Minimize attack surface
-| **API Gateway** | Single internal entry point behind proxy | Route requests internally, hide service topology, log/monitor requests
+| **Firewall** | Only ports 22(SSH) and 443(HTTPS) exposed | Minimize attack surface
+| **API Gateway** | Single entry point | Hide internal service topology
 |===
 
+**Network Flow (Proxy → Gateway → Services):**
+
+[source,ascii]
+----
+   External Clients
+          |
+          v
+   +----------------+
+   | Reverse Proxy  |
+   +----------------+
+          |
+          v
+   +----------------+
+   |  API Gateway   |
+   +----------------+
+      |        |
+      v        v
++-----------+ +-----------+
+| Webapp    | | Users     |
++-----------+ +-----------+
+      |
+      v
+  Game Engine
+----
 ==== Secrets Management
 
 * **Development**: `.env` files (gitignored)
