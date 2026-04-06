@@ -12,9 +12,9 @@ This abstraction allows understanding the system structure without drowning in i
 
 === Level 1: Overall System White Box
 
-The YOVI system is decomposed into **four top-level building blocks**: three services and an API gateway, plus an external database.
+The YOVI system is decomposed into **five top-level building blocks**: Nginx reverse proxy, API gateway, three services, plus an external database.
 
-[plantuml,"Level 1 System White Box",png]
+[plantuml,"Level 1 System White Box with Reverse Proxy",png]
 ----
 @startuml
 !define RECTANGLE node
@@ -23,6 +23,8 @@ skinparam componentStyle rectangle
 skinparam backgroundColor #FEFEFE
 
 package "YOVI System (Level 1)" {
+
+  component "Nginx Reverse Proxy (HTTPS)" as Proxy <<gateway>>
 
   component "API Gateway (gateway/)" as Gateway <<gateway>>
 
@@ -34,22 +36,30 @@ package "YOVI System (Level 1)" {
 
   database "MongoDB (database)" as DB <<database>>
 
-  Gateway --> Webapp : "serves static files\n(HTTP)"
-  Gateway --> Users : "routes /api/users/*\n(HTTP)"
-  Gateway --> Gamey : "routes /api/game/*\n(HTTP)"
+  Proxy --> Gateway : "routes requests, HTTPS termination"
+  Gateway --> Webapp : "serves static files\n(HTTP, internal)"
+  Gateway --> Users : "routes /api/users/*\n(HTTP, internal)"
+  Gateway --> Gamey : "routes /api/game/*\n(HTTP, internal)"
 
   Users --> DB : "MongoDB Wire Protocol\n(persistence)"
 
   Webapp --> Gateway : "API calls to backend\n(HTTP, internal)"
 
-  note top of Gateway
+  note top of Proxy
     **Provided Interfaces:**
-    * Public Web UI (port 443)
-    * Public Bot API (port 443)
+    * Public Web UI (HTTPS)
+    * Public Bot API (HTTPS)
     **Responsibilities:**
     * SSL termination
     * Request routing
-    * Rate limiting
+    * HTTP → HTTPS redirection
+  end note
+
+  note top of Gateway
+    **Responsibilities:**
+    * Internal request routing
+    * Service orchestration
+    * Stateless
   end note
 
   note bottom of Webapp
@@ -79,29 +89,41 @@ package "YOVI System (Level 1)" {
 actor "Human Player" as Human
 actor "External Bot" as Bot
 
-Human --> Gateway : "HTTPS"
-Bot --> Gateway : "HTTPS (API calls)"
+Human --> Proxy : "HTTPS"
+Bot --> Proxy : "HTTPS (API calls)"
 
 @enduml
 ----
 
 ==== Black Box Descriptions
 
-===== API Gateway
+===== Nginx Reverse Proxy
 
-* **Purpose/Responsibility**: Acts as the single entry point to the system. Routes external requests to the appropriate internal service, handles SSL termination, and provides a security layer.
+* **Purpose/Responsibility**: Public-facing entry point for HTTPS requests. Handles SSL termination, HTTP → HTTPS redirects, and forwards traffic to the internal API gateway.  
 * **Interface(s)**:
 ** *Provided*:
-*** Public Web UI endpoint
-*** Public Bot API endpoint
+*** Public Web UI endpoint (HTTPS)
+*** Public Bot API endpoint (HTTPS)
 ** *Required*:
-*** Web Frontend Service (internal HTTP)
-*** User Service (internal HTTP)
-*** Game Engine Service (internal HTTP)
-* **Quality/Performance Characteristics**: Must handle all external traffic; availability is critical. Stateless, can be scaled horizontally.
-* **Directory/File Location**: `/gateway/` (nginx config or Express Gateway config)
-* **Fulfilled Requirements**: Public deployment, single entry point
-* **Open Issues**: SSL certificate management in production
+*** API Gateway (internal HTTP)
+* **Quality/Performance Characteristics**: Must handle all external traffic; stateless; can scale horizontally.  
+* **Directory/File Location**: `/gateway/nginx/` (Nginx config)
+* **Fulfilled Requirements**: Public deployment, secure HTTPS access
+* **Open Issues**: Certificate renewal, load balancing
+
+===== API Gateway
+
+* **Purpose/Responsibility**: Internal routing and orchestration between services. Now receives traffic via reverse proxy.  
+* **Interface(s)**:
+** *Provided*:
+*** Routes for Webapp, Users, Gamey
+** *Required*:
+*** Webapp, Users, Gamey services (internal HTTP)
+* **Quality/Performance Characteristics**: Stateless, can be scaled horizontally
+* **Directory/File Location**: `/gateway/` (Express Gateway config)
+* **Fulfilled Requirements**: Service routing, abstraction of internal services
+* **Open Issues**: None (internal use only)
+
 
 ===== Web Frontend Service
 
@@ -310,13 +332,12 @@ This table summarizes the key interfaces between building blocks, showing the **
 
 |===
 | Interface | Provider | Consumer | Protocol | Data Format | Purpose
-| **Public Web UI** | Gateway | Browser | HTTPS | HTML/CSS/JS | Serve frontend to users
-| **Public Bot API** | Gateway | External Bot | HTTPS | JSON (YEN) | Bot integration
+| **Public Web UI** | Nginx Reverse Proxy | Browser | HTTPS | HTML/CSS/JS | Serve frontend to users
+| **Public Bot API** | Nginx Reverse Proxy | External Bot | HTTPS | JSON (YEN) | Bot integration
 | **User API** | Users Service | Webapp | HTTP (internal) | JSON | User management
 | **Game API** | Gamey Service | Webapp | HTTP (internal) | JSON (YEN) | Game logic
 | **Database Interface** | MongoDB | Users Service | MongoDB Wire | BSON | Data persistence
-| **Internal Gateway Calls** | Gateway | Webapp/Users/Gamey | HTTP (internal) | JSON | Service communication
-|===
+| **Internal Gateway Calls** | API Gateway | Webapp/Users/Gamey | HTTP (internal) | JSON | Service communication
 
 === Mapping to Requirements
 
