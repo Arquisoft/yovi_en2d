@@ -1,29 +1,16 @@
-ifndef::imagesdir[:imagesdir: ../images]
+Context and Scope
+This section delimits the YOVI system from its environment. Following arc42 guidelines, we separate business context (what the system does, from a domain perspective) from technical context (how it communicates, from an infrastructure perspective).
 
-[[section-context-and-scope]]
-== Context and Scope
+Business Context
+The YOVI system is a web-based gaming platform for Game Y. From a business perspective, it provides two distinct value propositions:
 
-This section delimits the YOVI system from its environment. Following arc42 guidelines, we separate **business context**
-(what the system does, from a domain perspective) from **technical context** (how it communicates, from an infrastructure
-perspective).
+For human players: An intuitive web interface to play Game Y against AI opponents, register, and track their performance.
 
-=== Business Context
+For bot developers: A public API that allows automated bots to interact with the game engine, request moves, and play matches.
 
-The YOVI system is a web-based gaming platform for Game Y. From a business perspective, it provides two distinct value
-propositions:
+The system depends on no external business systems - it is self-contained in terms of domain functionality. All game logic, user management, and AI strategies are implemented within the YOVI system boundaries.
 
-* **For human players**: An intuitive web interface to play Game Y against AI opponents, register, and track their
-performance.
-* **For bot developers**: A public API that allows automated bots to interact with the game engine, request moves, and
-play matches.
-
-The system depends on no external business systems - it is self-contained in terms of domain functionality. All game
-logic, user management, and AI strategies are implemented within the YOVI system boundaries.
-
-==== Business Context Diagram
-
-[plantuml,"Business Context Diagram - YOVI System",png]
-----
+Business Context Diagram
 @startuml
 !define RECTANGLE class
 
@@ -52,29 +39,72 @@ note right of UC_API_Move
   Output: Next move in YEN notation
 end note
 @enduml
-----
 
-==== Business Interfaces
+Business Interfaces
+Interface
 
-|===
-| Interface | Description | Input | Output | Communication Partner
-| **Game Play Interface** | Web UI for human players to interact with the game | Mouse clicks, keyboard | Visual board, game state | Human Player
-| **User Management** | Registration and login interface | Username, password | Session token, user profile | Human Player
-| **Statistics Interface** | Access to match history and metrics | User ID | Win/loss records, game history | Human Player
-| **Bot API - Move Request** | Programmatic interface for bots to get next move | Board state (YEN), strategy | Move (YEN) | Bot
-| **Bot API - Game State** | Programmatic interface to query game status | Game ID | Current board, turn, winner | Bot
-|===
+Description
 
-=== Technical Context
+Input
 
-From a technical perspective, the YOVI system is implemented as **three independent services** communicating via
-HTTP/REST, plus an **API gateway** that routes external requests. This section describes the technical channels and
-protocols that enable the business interfaces defined above.
+Output
 
-==== Technical Context Diagram
+Communication Partner
 
-[plantuml,"Technical Context Diagram - YOVI System",png]
-----
+Game Play Interface
+
+Web UI for human players to interact with the game
+
+Mouse clicks, keyboard
+
+Visual board, game state
+
+Human Player
+
+User Management
+
+Registration and login interface
+
+Username, password
+
+Session token, user profile
+
+Human Player
+
+Statistics Interface
+
+Access to match history and metrics
+
+User ID
+
+Win/loss records, game history
+
+Human Player
+
+Bot API - Move Request
+
+Programmatic interface for bots to get next move
+
+Board state (YEN), strategy
+
+Move (YEN)
+
+Bot
+
+Bot API - Game State
+
+Programmatic interface to query game status
+
+Game ID
+
+Current board, turn, winner
+
+Bot
+
+Technical Context
+From a technical perspective, the YOVI system is implemented as three independent services communicating via HTTP/REST, plus an API gateway and a reverse proxy that handles HTTPS and routes external requests.
+
+Technical Context Diagram
 @startuml
 !define RECTANGLE node
 
@@ -89,7 +119,12 @@ node "Internet" {
 }
 
 node "YOVI Deployment" {
-  frame "DMZ / Gateway" {
+
+  frame "Edge / Reverse Proxy" {
+    component "Nginx Reverse Proxy" as Proxy
+  }
+
+  frame "Gateway Layer" {
     component "API Gateway" as Gateway
   }
 
@@ -102,10 +137,12 @@ node "YOVI Deployment" {
 }
 
 Human --> Browser : HTTPS
-Browser --> Gateway : HTTPS (port 443)
+Browser --> Proxy : HTTPS (port 443)
 
 Bot --> BotClient
-BotClient --> Gateway : HTTPS (port 443)
+BotClient --> Proxy : HTTPS (port 443)
+
+Proxy --> Gateway : HTTP (internal)
 
 Gateway --> Webapp : HTTP (internal)
 Gateway --> Users : HTTP (internal)
@@ -115,6 +152,13 @@ Webapp --> Gateway : HTTP (internal, for API calls)
 Users --> DB : MongoDB Wire Protocol
 Gamey --> Gamey : (self-contained, no external DB)
 
+note right of Proxy
+  Responsibilities:
+  - HTTPS termination
+  - HTTP → HTTPS redirection
+  - Forward requests to gateway
+end note
+
 note right of Gateway
   Routes:
   / → webapp
@@ -122,62 +166,181 @@ note right of Gateway
   /api/game → gamey:4000
 end note
 @enduml
-----
 
-==== Technical Interfaces and Channels
+Technical Interfaces and Channels
+This table maps the business interfaces (what) to the technical channels (how), showing exactly how each domain interaction is implemented technically.
 
-This table maps the **business interfaces** (what) to the **technical channels** (how), showing exactly how each domain interaction is implemented technically.
+Business Interface
 
-|===
-| Business Interface | Technical Channel | Protocol | Data Format
-| **Game Play UI** | Browser ↔ Gateway | HTTPS | HTML/CSS/JS + JSON
-| **User Management** | Gateway ↔ Users Service | HTTP (internal) | JSON
-| **User Registration** | Browser ↔ Gateway ↔ Users | HTTPS → HTTP → JSON | JSON
-| **User Login** | Browser ↔ Gateway ↔ Users | HTTPS → HTTP → JSON | JSON
-| **Statistics Retrieval** | Browser ↔ Gateway ↔ Users | HTTPS → HTTP → JSON | JSON
-| **Bot API - Move Request** | Bot ↔ Gateway ↔ Gamey | HTTPS → HTTP → JSON | JSON (YEN)
-| **Bot API - Game State** | Bot ↔ Gateway ↔ Gamey | HTTPS → HTTP → JSON | JSON (YEN)
-| **Game Logic Execution** | Gateway ↔ Gamey Service | HTTP (internal) | JSON (YEN)
-| **Database Access** | Users Service ↔ MongoDB | MongoDB Wire Protocol | BSON
-|===
+Technical Channel
 
-==== Technology Stack per Component
+Protocol
 
-|===
-| Component | Technology  | Justification
-| **Web Frontend** | React + TypeScript  | Client requirement, component reusability
-| **User Service** | Node.js + Express  | Lightweight, npm ecosystem, quick development
-| **Game Engine** | Rust  | Performance, memory safety, required by client
-| **API Gateway** | Nginx (or Express Gateway)  | Simple reverse proxy, request routing
-| **Database** | MongoDB | Flexible schema for user data, easy integration
-| **Containerization** | Docker + docker-compose | Consistent environments, easy deployment
-| **CI/CD** | GitHub Actions  | Integrated with repository, automated testing
-|===
+Data Format
 
-=== Scope
+Game Play UI
 
+Browser ↔ Reverse Proxy ↔ Gateway
 
-==== In Scope (Core Requirements)
-* Classic Game Y implementation with correct rules
-* Player-versus-machine game mode with variable board size
-* Multiple AI strategies (difficulties), user-selectable
-* User registration and authentication
-* Match history and basic statistics (games played, wins/losses)
-* Public REST API for bots with YEN notation
-* Docker containerization and docker-compose deployment
-* CI/CD pipeline with automated testing
-* Public web deployment
+HTTPS → HTTP
 
-==== Out of Scope (Optional / Future)
-* Game variants (Poly-Y, Hex, etc.) - optional features if time permits
-* User ranking/leaderboard system - optional
-* Internationalization (i18n) - optional
-* Mobile applications
-* Multiplayer (human vs. human)
-* Advanced analytics or machine learning
+HTML/CSS/JS + JSON
 
+User Management
 
-==== In Scope but Implemented Simply
-* **Bot strategies**: Initial implementation includes random move
-* **Statistics**: Basic counters only, not visible yet for the user, no advanced metrics
-* **Authentication**: Simple JWT-based, no OAuth/social login
+Gateway ↔ Users Service
+
+HTTP (internal)
+
+JSON
+
+User Registration
+
+Browser ↔ Proxy ↔ Gateway ↔ Users
+
+HTTPS → HTTP → JSON
+
+JSON
+
+User Login
+
+Browser ↔ Proxy ↔ Gateway ↔ Users
+
+HTTPS → HTTP → JSON
+
+JSON
+
+Statistics Retrieval
+
+Browser ↔ Proxy ↔ Gateway ↔ Users
+
+HTTPS → HTTP → JSON
+
+JSON
+
+Bot API - Move Request
+
+Bot ↔ Proxy ↔ Gateway ↔ Gamey
+
+HTTPS → HTTP → JSON
+
+JSON (YEN)
+
+Bot API - Game State
+
+Bot ↔ Proxy ↔ Gateway ↔ Gamey
+
+HTTPS → HTTP → JSON
+
+JSON (YEN)
+
+Game Logic Execution
+
+Gateway ↔ Gamey Service
+
+HTTP (internal)
+
+JSON (YEN)
+
+Database Access
+
+Users Service ↔ MongoDB
+
+MongoDB Wire Protocol
+
+BSON
+
+Technology Stack per Component
+Component
+
+Technology
+
+Justification
+
+Web Frontend
+
+React + TypeScript
+
+Client requirement, component reusability
+
+User Service
+
+Node.js + Express
+
+Lightweight, npm ecosystem, quick development
+
+Game Engine
+
+Rust
+
+Performance, memory safety, required by client
+
+API Gateway
+
+Express (or similar)
+
+Application-level routing and API composition
+
+Reverse Proxy
+
+Nginx
+
+HTTPS termination and request forwarding
+
+Database
+
+MongoDB
+
+Flexible schema for user data, easy integration
+
+Containerization
+
+Docker + docker-compose
+
+Consistent environments, easy deployment
+
+CI/CD
+
+GitHub Actions
+
+Integrated with repository, automated testing
+
+Scope
+In Scope (Core Requirements)
+Classic Game Y implementation with correct rules
+
+Player-versus-machine game mode with variable board size
+
+Multiple AI strategies (difficulties), user-selectable
+
+User registration and authentication
+
+Match history and basic statistics (games played, wins/losses)
+
+Public REST API for bots with YEN notation
+
+Docker containerization and docker-compose deployment
+
+CI/CD pipeline with automated testing
+
+Public web deployment over HTTPS
+
+Out of Scope (Optional / Future)
+Game variants (Poly-Y, Hex, etc.) - optional features if time permits
+
+User ranking/leaderboard system - optional
+
+Internationalization (i18n) - optional
+
+Mobile applications
+
+Multiplayer (human vs. human)
+
+Advanced analytics or machine learning
+
+In Scope but Implemented Simply
+Bot strategies: Initial implementation includes random move
+
+Statistics: Basic counters only, not visible yet for the user, no advanced metrics
+
+Authentication: Simple JWT-based, no OAuth/social login
