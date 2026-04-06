@@ -1,84 +1,261 @@
 /* ============================================================
-   GAME OF Y — Design System (Red, White & Navy Blue)
+   GAME OF Y — Redesigned Frontend
+   Color scheme: red (#c0392b), white (#ffffff), navy blue (#1a1a4b)
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&display=swap');
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400;1,500;1,700&display=swap');
 
+/* ── ROOT VARIABLES ───────────────────────────────────── */
 :root {
-  /* ── COLORS ───────────────────────────────────────────── */
-  --bg:        #f8f9fa;   /* soft white background */
-  --surface:   #ffffff;   /* card background */
-  --surface2:  #e3e9f1;   /* secondary surfaces */
-  --border:    #1c2a4a;   /* navy border */
-  --border2:   #b0c4de;   /* lighter blue border */
-  --text:      #1c2a4a;   /* dark navy text */
-  --muted:     #6c757d;   /* grayish for secondary text */
-  --accent:    #dc3545;   /* red accent */
-  --danger:    #c82333;   /* danger red */
-  --ok:        #28a745;   /* success green */
-  --white:     #ffffff;   /* pure white */
+  --bg:        #f7f7f7;
+  --surface:   #ffffff;
+  --surface2:  #f0f0f5;
+  --border:    #1a1a4b;
+  --border2:   #c5c5d1;
+  --text:      #1a1a4b;
+  --muted:     #555577;
+  --accent:    #c0392b;
+  --danger:    #e74c3c;
+  --ok:        #27ae60;
+  --white:     #ffffff;
 
-  /* ── SPACING & RADIUS ────────────────────────────────── */
-  --r:   14px;
-  --r2:  8px;
-  --shadow: 0 2px 12px rgba(0,0,0,.12);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.16);
+  --r:   12px;
+  --r2:  6px;
+  --shadow: 0 2px 10px rgba(0,0,0,.08);
+  --shadow-lg: 0 8px 28px rgba(0,0,0,.15);
 
   font-family: 'DM Sans', system-ui, sans-serif;
 }
 
-/* ── RESET ─────────────────────────────────────────────── */
+/* ── GLOBAL RESET ─────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--text); min-width: 320px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-width: 320px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 
-/* ── SITE HEADER ───────────────────────────────────────── */
+  /* subtle dotted pattern */
+  background-image: radial-gradient(circle, #dcdce0 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ── SITE HEADER ─────────────────────────────────────── */
 .site-header {
-  background: var(--accent);
-  border-bottom: 2px solid var(--border);
-  position: sticky; top: 0; z-index: 30;
-  color: var(--white);
+  background: var(--surface);
+  border-bottom: 2px solid var(--border2);
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 .site-header__inner {
-  display: flex; align-items: center; gap: 14px;
-  padding: 0 20px; height: 62px; max-width: 1100px; margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  height: 58px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
-.site-header__logo { height: 40px; border: 2px solid var(--white); border-radius: 6px; padding: 3px; background: var(--white); flex-shrink: 0; }
-.site-header__title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; flex: 1; color: var(--white); }
+.site-header__logo {
+  height: 36px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  padding: 2px;
+  background: var(--white);
+  flex-shrink: 0;
+}
+.site-header__title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 2px;
+  flex: 1;
+  white-space: nowrap;
+}
+.site-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 
-/* ── NAV ─────────────────────────────────────────────── */
-.nav-link { background: none; border: none; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--white); cursor: pointer; padding: 6px 9px; border-radius: var(--r2); transition: color .15s, background .15s; }
-.nav-link:hover { color: var(--accent); background: var(--white); }
-.nav-link--active { color: var(--white); font-weight: bold; }
-.nav-link--exit { color: var(--danger); }
-.nav-link--exit:hover { background: #f8d7da; }
+/* ── PAGE LAYOUT ────────────────────────────────────── */
+.page, .auth-page, .finished-page, .game-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.page {
+  position: relative;
+  background-color: var(--bg);
+  overflow: hidden;
+}
 
-/* ── PAGE LAYOUT ─────────────────────────────────────── */
-.page-main { flex: 1; padding: 28px 20px 40px; max-width: 860px; margin: 0 auto; width: 100%; }
+.page::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(rgba(26, 117, 255, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+  z-index: 0;
+}
+.page-main {
+  position: relative;
+  z-index: 1; /* ensures content sits above the dots */
+}
 
-/* ── AUTH ────────────────────────────────────────────── */
-.auth-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--r); padding: 30px; max-width: 420px; box-shadow: var(--shadow-lg); }
-.auth-card__heading { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; margin: 0 0 20px; color: var(--accent); }
-.form-label { color: var(--text); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
-.form-input { border: 2px solid var(--border2); padding: 11px 14px; border-radius: var(--r2); background: var(--white); color: var(--text); font-size: 15px; }
+.page-main, .auth-body, .game-main, .finished-body {
+  flex: 1;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── AUTH CARD ───────────────────────────────────────── */
+.auth-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--r);
+  padding: 28px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+  margin: 0 auto;
+}
+.auth-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.auth-card__logo {
+  height: 56px;
+  border-radius: 8px;
+}
+.auth-card__heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+}
+
+/* ── FORM ────────────────────────────────────────────── */
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.form-label { font-weight: 700; font-size: 12px; color: var(--muted); text-transform: uppercase; }
+.form-input {
+  padding: 10px 14px;
+  border: 2px solid var(--border2);
+  border-radius: var(--r2);
+  font-family: inherit;
+  font-size: 15px;
+}
 .form-input:focus { outline: none; border-color: var(--accent); }
 
-/* ── BUTTONS ─────────────────────────────────────────── */
-.btn--primary { background: var(--accent); color: var(--white); border-color: var(--accent); }
-.btn--primary:hover:not(:disabled) { background: #b71c1c; border-color: #b71c1c; }
-.btn--outline { background: var(--white); color: var(--accent); border-color: var(--accent); }
-.btn--outline:hover { background: var(--accent); color: var(--white); }
-.btn--danger { background: var(--danger); color: var(--white); border-color: var(--danger); }
+/* ── BUTTONS ────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 12px 20px;
+  border-radius: var(--r2);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all .12s;
+}
+.btn--full { width: 100%; }
+.btn--lg { font-size: 16px; padding: 14px 24px; }
+.btn--primary {
+  background: var(--accent);
+  color: var(--white);
+  border-color: var(--accent);
+}
+.btn--primary:hover { background: #a03227; border-color: #a03227; }
+.btn--outline {
+  background: var(--white);
+  color: var(--text);
+  border-color: var(--border2);
+}
+.btn--outline:hover { background: var(--surface2); }
 
-/* ── MESSAGES ────────────────────────────────────────── */
-.msg--ok { color: var(--ok); font-weight: 700; }
-.msg--error { color: var(--danger); font-weight: 700; }
+/* ── MESSAGES ───────────────────────────────────────── */
+.msg { font-weight: 700; font-size: 14px; margin-top: 10px; }
+.msg--ok { color: var(--ok); }
+.msg--error { color: var(--danger); }
 
-/* ── HOME / CARDS ────────────────────────────────────── */
-.play-card { background: var(--white); border: 2px solid var(--border2); border-radius: var(--r); padding: 22px 18px; transition: box-shadow .18s, transform .12s, border-color .15s, background .15s; text-align: center; }
-.play-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--shadow-lg); background: var(--surface2); }
-.play-card__title { color: var(--accent); font-family: 'Bebas Neue', sans-serif; }
+/* ── LANGUAGE TOGGLE ─────────────────────────────────── */
+.lang-toggle { display: inline-flex; border: 2px solid var(--border2); border-radius: var(--r2); overflow: hidden; }
+.lang-btn { font-weight: 700; font-size: 12px; padding: 6px 10px; cursor: pointer; background: none; border: none; }
+.lang-btn:hover { background: var(--surface2); }
+.lang-btn.is-active { background: var(--accent); color: var(--white); }
 
-/* ── MEDIA QUERIES ───────────────────────────────────── */
-@media (max-width: 520px) { .play-cards { grid-template-columns: 1fr; } }
-@media (max-width: 500px) { .site-header__title { font-size: 20px; } .auth-card { padding: 22px 16px; } }
+/* ── HOME PLAY CARDS ─────────────────────────────────── */
+.play-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  justify-items: center;
+  width: 100%;
+  max-width: 900px;
+}
+.play-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--r);
+  padding: 20px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+.play-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── GAME BOARD ─────────────────────────────────────── */
+.game-board-wrap {
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── FINISHED CARD ─────────────────────────────────── */
+.finished-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--r);
+  padding: 48px 36px;
+  text-align: center;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── RESPONSIVE ─────────────────────────────────────── */
+@media (max-width: 520px) {
+  .play-cards { grid-template-columns: 1fr; }
+  .auth-card, .finished-card { padding: 22px 16px; }
+  .site-header__inner { height: 52px; padding: 0 14px; }
+  .site-header__title { font-size: 20px; }
+}

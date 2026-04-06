@@ -53,7 +53,7 @@ export const translations: Record<Lang, Dict> = {
 
     // Home
     "home.badge": "Estás en Gamey - Yovi_EN2C",
-    "home.welcome": "Hola {username}",
+    "home.welcome": "Bienvenido",
     "home.subtitle":
       "Juega al juego Y",
     "home.start": "Empezar partida",
@@ -75,6 +75,11 @@ export const translations: Record<Lang, Dict> = {
     "home.config.playerTitle": "CONFIGURACIÓN DE PARTIDA",
     "home.config.bot": "Bot",
     "home.config.boardSize": "Tamaño del tablero",
+
+    "home.chooseOpponent" : "Escoge a tu rival y comienza la partida.",
+
+"home.instructions.title": "Cómo jugar",
+"home.instructions.description": "El Juego de la Y consiste en hacer una línea que conecte los tres lados de un tiángulo. Haz click en un círculo para seleccionalo. Confirma tu selección y haz tu movimiento ¡Derrota a tu oponente!",
 
     // Bots
     "game.bot.random": "Bot aleatorio",
@@ -173,7 +178,7 @@ export const translations: Record<Lang, Dict> = {
 
     // Home
     "home.badge": "You are in Gamey - Yovi_EN2C",
-    "home.welcome": "Hello {username}",
+    "home.welcome": "Welcome",
     "home.subtitle": "Play the Game of Y",
     "home.start": "Start game",
     "home.goBoard": "Go to board",
@@ -194,6 +199,10 @@ export const translations: Record<Lang, Dict> = {
     "home.config.playerTitle": "MATCH SETTINGS",
     "home.config.bot": "Bot",
     "home.config.boardSize": "Board size",
+    "home.chooseOpponent" : "Choose your opponent and start the game.",
+    "home.instructions.title": "How to Play",
+    "home.instructions.description": "The Game of Y consists on making a line connecting the three sides of a triangle. Click on a circle to select it. Confirm your choice to make your move. Beat your opponent!",
+
 
     // Bots
     "game.bot.random": "Random Bot",
