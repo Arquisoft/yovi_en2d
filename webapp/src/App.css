@@ -1,84 +1,183 @@
 /* ============================================================
-   GAME OF Y — Design System (Red, White & Navy Blue)
+   GAME OF Y — Design System
+   Desktop-focused, red-white-navy color scheme
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700&display=swap');
 
+/* ── COLORS ─────────────────────────────────────────────── */
 :root {
-  /* ── COLORS ───────────────────────────────────────────── */
-  --bg:        #f8f9fa;   /* soft white background */
-  --surface:   #ffffff;   /* card background */
-  --surface2:  #e3e9f1;   /* secondary surfaces */
-  --border:    #1c2a4a;   /* navy border */
-  --border2:   #b0c4de;   /* lighter blue border */
-  --text:      #1c2a4a;   /* dark navy text */
-  --muted:     #6c757d;   /* grayish for secondary text */
-  --accent:    #dc3545;   /* red accent */
-  --danger:    #c82333;   /* danger red */
-  --ok:        #28a745;   /* success green */
-  --white:     #ffffff;   /* pure white */
+  --bg:        #f5f6fa;    /* light background */
+  --surface:   #ffffff;    /* white cards */
+  --surface2:  #e8ebf2;    /* lighter surface for ribbons */
+  --border:    #1b3a57;    /* navy blue border */
+  --border2:   #c1c6d1;    /* lighter border */
+  --text:      #1b3a57;    /* navy blue text */
+  --muted:     #a2a9b0;    /* muted grey for secondary text */
+  --accent:    #c0392b;    /* red accent */
+  --danger:    #e74c3c;
+  --ok:        #27ae60;
+  --white:     #ffffff;
 
-  /* ── SPACING & RADIUS ────────────────────────────────── */
-  --r:   14px;
-  --r2:  8px;
-  --shadow: 0 2px 12px rgba(0,0,0,.12);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,.16);
+  --r:   12px;
+  --r2:  6px;
+  --shadow: 0 2px 10px rgba(0,0,0,.12);
+  --shadow-lg: 0 6px 20px rgba(0,0,0,.16);
 
   font-family: 'DM Sans', system-ui, sans-serif;
 }
 
-/* ── RESET ─────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-body { background: var(--bg); color: var(--text); min-width: 320px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-width: 1024px; /* desktop minimum */
+}
 
 /* ── SITE HEADER ───────────────────────────────────────── */
 .site-header {
-  background: var(--accent);
+  background: var(--surface2);
   border-bottom: 2px solid var(--border);
-  position: sticky; top: 0; z-index: 30;
-  color: var(--white);
+  position: sticky;
+  top: 0;
+  z-index: 30;
 }
 .site-header__inner {
-  display: flex; align-items: center; gap: 14px;
-  padding: 0 20px; height: 62px; max-width: 1100px; margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 24px;
+  height: 60px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
-.site-header__logo { height: 40px; border: 2px solid var(--white); border-radius: 6px; padding: 3px; background: var(--white); flex-shrink: 0; }
-.site-header__title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; flex: 1; color: var(--white); }
+.site-header__logo {
+  height: 32px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
+  padding: 2px;
+  background: var(--white);
+  flex-shrink: 0;
+}
+.site-header__title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+  flex: 1;
+}
+.site-header__nav { display: flex; align-items: center; gap: 4px; }
+.nav-link {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--r2);
+  transition: color .15s, background .15s;
+}
+.nav-link:hover { color: var(--white); background: var(--accent); }
+.nav-link--active { color: var(--accent); }
+.nav-user { font-size: 12px; font-weight: 700; color: var(--muted); }
 
-/* ── NAV ─────────────────────────────────────────────── */
-.nav-link { background: none; border: none; font-weight: 700; font-size: 12px; text-transform: uppercase; color: var(--white); cursor: pointer; padding: 6px 9px; border-radius: var(--r2); transition: color .15s, background .15s; }
-.nav-link:hover { color: var(--accent); background: var(--white); }
-.nav-link--active { color: var(--white); font-weight: bold; }
-.nav-link--exit { color: var(--danger); }
-.nav-link--exit:hover { background: #f8d7da; }
+/* Ribbon under header */
+.site-header__ribbon {
+  height: 24px;
+  background: var(--surface2);
+  border-bottom: 2px solid var(--border);
+  clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+  margin-top: -2px;
+}
 
-/* ── PAGE LAYOUT ─────────────────────────────────────── */
-.page-main { flex: 1; padding: 28px 20px 40px; max-width: 860px; margin: 0 auto; width: 100%; }
+/* ── AUTH PAGE ─────────────────────────────────────────── */
+.auth-page { min-height: 100vh; display: flex; flex-direction: column; }
+.auth-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+.auth-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--r);
+  padding: 32px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+}
+.auth-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.auth-card__logo {
+  height: 48px;
+  border: 2px solid var(--border);
+  border-radius: var(--r2);
+  background: var(--white);
+  padding: 2px;
+}
+.auth-card__heading {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  letter-spacing: 2px;
+  margin: 0 0 20px;
+  color: var(--accent);
+}
 
-/* ── AUTH ────────────────────────────────────────────── */
-.auth-card { background: var(--surface); border: 2px solid var(--border); border-radius: var(--r); padding: 30px; max-width: 420px; box-shadow: var(--shadow-lg); }
-.auth-card__heading { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 2px; margin: 0 0 20px; color: var(--accent); }
-.form-label { color: var(--text); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
-.form-input { border: 2px solid var(--border2); padding: 11px 14px; border-radius: var(--r2); background: var(--white); color: var(--text); font-size: 15px; }
+/* ── FORM ────────────────────────────────────────────────── */
+.form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.form-label { font-weight: 700; font-size: 13px; color: var(--text); }
+.form-input {
+  padding: 12px 14px;
+  border: 2px solid var(--border2);
+  border-radius: var(--r2);
+  background: var(--white);
+  color: var(--text);
+  font-size: 15px;
+}
 .form-input:focus { outline: none; border-color: var(--accent); }
+.form-input::placeholder { color: var(--muted); }
 
-/* ── BUTTONS ─────────────────────────────────────────── */
-.btn--primary { background: var(--accent); color: var(--white); border-color: var(--accent); }
-.btn--primary:hover:not(:disabled) { background: #b71c1c; border-color: #b71c1c; }
-.btn--outline { background: var(--white); color: var(--accent); border-color: var(--accent); }
+.form-select { padding: 12px 36px 12px 14px; border-radius: var(--r2); border: 2px solid var(--border2); }
+.form-select:focus { border-color: var(--accent); }
+
+/* ── BUTTONS ───────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; border-radius: var(--r2); padding: 12px 20px; cursor: pointer; transition: all .12s; }
+.btn--primary { background: var(--accent); color: var(--white); border: 2px solid var(--accent); }
+.btn--primary:hover:not(:disabled) { background: #a8322b; border-color: #a8322b; }
+.btn--outline { background: var(--white); color: var(--accent); border: 2px solid var(--accent); }
 .btn--outline:hover { background: var(--accent); color: var(--white); }
-.btn--danger { background: var(--danger); color: var(--white); border-color: var(--danger); }
 
-/* ── MESSAGES ────────────────────────────────────────── */
-.msg--ok { color: var(--ok); font-weight: 700; }
+/* ── MESSAGES ────────────────────────────────────────────── */
+.msg--ok    { color: var(--ok); }
 .msg--error { color: var(--danger); font-weight: 700; }
 
-/* ── HOME / CARDS ────────────────────────────────────── */
-.play-card { background: var(--white); border: 2px solid var(--border2); border-radius: var(--r); padding: 22px 18px; transition: box-shadow .18s, transform .12s, border-color .15s, background .15s; text-align: center; }
-.play-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--shadow-lg); background: var(--surface2); }
-.play-card__title { color: var(--accent); font-family: 'Bebas Neue', sans-serif; }
+/* ── HOME PAGE ───────────────────────────────────────────── */
+.home-logo { height: 48px; border-radius: var(--r2); border: 2px solid var(--border); }
+.home-username { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--accent); }
 
-/* ── MEDIA QUERIES ───────────────────────────────────── */
-@media (max-width: 520px) { .play-cards { grid-template-columns: 1fr; } }
-@media (max-width: 500px) { .site-header__title { font-size: 20px; } .auth-card { padding: 22px 16px; } }
+.play-section-title { font-family: 'Bebas Neue', sans-serif; font-size: 36px; color: var(--accent); margin-bottom: 20px; }
+.play-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.play-card { background: var(--surface); border: 2px solid var(--border2); border-radius: var(--r); padding: 20px; transition: transform .12s, box-shadow .15s; }
+.play-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.play-card__title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--accent); }
+
+/* ── MOBILE / RESPONSIVE ─────────────────────────────────── */
+@media (max-width: 1024px) {
+  .auth-card { max-width: 90%; padding: 28px; }
+  .site-header__title { font-size: 24px; }
+  .auth-card__heading { font-size: 28px; }
+  .play-section-title { font-size: 28px; }
+}
