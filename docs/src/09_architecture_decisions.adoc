@@ -1,5 +1,3 @@
-
-
 [[section-design-decisions]]
 == Architecture Decisions
 
@@ -41,6 +39,7 @@ We will design the game mode system with **extensibility as a core principle**. 
 * ️ Mitigation: Focus on PvM mode first, ensure extension points are clean
 
 ---
+
 === ADR-002: MongoDB for User Data Persistence
 
 * **Status**: Implemented
@@ -74,6 +73,7 @@ We will use **MongoDB** for user data persistence. The schema will be designed t
 *  Mitigation: Use atomic operations for critical updates (e.g., game statistics)
 
 ---
+
 === ADR-003: Three-Service Microservices Architecture
 
 * **Status**: Implemented
@@ -103,6 +103,7 @@ All services will communicate via REST APIs and be orchestrated with an API gate
 *  Mitigation: docker-compose simplifies local development and deployment
 
 ---
+
 === ADR-004: API Gateway as Single Entry Point
 
 * **Status**: Implemented
@@ -138,6 +139,7 @@ We will implement an **API Gateway** (`gateway/`) as the single entry point for 
 *  Mitigation: Gateway is stateless and can be scaled horizontally
 
 ---
+
 === ADR-005: Strategy Pattern for AI Bot Behaviors
 
 * **Status**: In Progress
@@ -171,6 +173,44 @@ We will implement the **Strategy Pattern** in the `gamey` service. Each AI strat
 
 ---
 
+=== ADR-006: Reverse Proxy and HTTPS Termination
+
+* **Status**: Implemented
+* **Date**: 2026-04-06
+* **Deciders**: Development Team
+
+**Context**:
+The platform must be accessible securely over HTTPS and expose multiple internal services through a single public endpoint. Additionally, SSL/TLS certificate management should be centralized to avoid duplication across services.
+
+**Decision**:
+We introduce a reverse proxy using **Nginx** as the public entry point of the system. The reverse proxy is responsible for:
+
+* Redirecting all HTTP traffic (port 80) to HTTPS
+* Handling SSL/TLS termination using Let's Encrypt certificates
+* Routing incoming requests:
+  * `/` → webapp service
+  * `/api/*` → API Gateway
+
+This approach ensures that all internal services communicate over HTTP, while external communication is secured via HTTPS.
+
+**Alternatives Considered**:
+
+* **Handling HTTPS in each service**: Rejected - duplicates configuration and increases complexity
+* **Letting the API Gateway manage HTTPS**: Rejected - mixes routing and infrastructure concerns
+* **No HTTPS**: Rejected - insecure and not suitable for production environments
+
+**Consequences**:
+
+*  Positive: Centralized SSL/TLS management simplifies configuration
+*  Positive: Improved security by enforcing HTTPS
+*  Positive: Clean separation between infrastructure (proxy) and application logic
+*  Positive: Single public endpoint for all services
+*  Negative: Additional component to deploy and maintain
+*  Negative: Slight latency introduced by proxy layer
+*  Mitigation: Nginx is lightweight and widely used in production environments
+
+---
+
 === Summary of Architectural Decisions
 
 |===
@@ -180,4 +220,5 @@ We will implement the **Strategy Pattern** in the `gamey` service. Each AI strat
 | **ADR-003** | Three-Service Architecture | Technology constraints (TypeScript + Rust) | Implemented
 | **ADR-004** | API Gateway | Security, single entry point | Implemented
 | **ADR-005** | Strategy Pattern for AI | Extensibility for multiple strategies | In Progress
+| **ADR-006** | Reverse Proxy + HTTPS | Security and centralized routing | Implemented
 |===
