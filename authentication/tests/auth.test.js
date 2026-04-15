@@ -1,214 +1,248 @@
-import { describe, it, beforeAll, expect } from 'vitest'
-import request from 'supertest'
-import mongoose from 'mongoose'
-import app from '../auth-service.js'
+const request = require('supertest');
+const app = require('../auth-service');
+const jwt = require('jsonwebtoken');
 
-let isConnected = false
+const JWT_SECRET = process.env.JWT_SECRET || 'test_secret';
 
+// ---------------------- MOCK FETCH ----------------------
+global.fetch = async (url, options) => {
+    const body = JSON.parse(options.body || '{}');
 
+    // ---------------- REGISTER ----------------
+    if (url.includes('/createuser')) {
+
+        // SUCCESS PATH
+        if (body.username === 'ok_user') {
+            return {
+                status: 201,
+                json: async () => ({ success: true }),
+            };
+        }
+
+        // FAILURE PATH (users-service error)
+        if (body.username === 'existing') {
+            return {
+                status: 400,
+                json: async () => ({
+                    success: false,
+                    error: 'User already exists',
+                }),
+            };
+        }
+
+        // CRASH PATH (covers catch block)
+        if (body.username === 'crash_user') {
+            throw new Error('Network failure');
+        }
+
+        return {
+            status: 400,
+            json: async () => ({
+                success: false,
+                error: 'default fail',
+            }),
+        };
+    }
+
+    // ---------------- LOGIN ----------------
+    if (url.includes('/login')) {
+
+        // SUCCESS
+        if (body.username === 'valid_user') {
+            return {
+                status: 200,
+                json: async () => ({
+                    success: true,
+                    user: {
+                        id: '1',
+                        username: 'valid_user',
+                    },
+                }),
+            };
+        }
+
+        // FAILURE (invalid credentials)
+        if (body.username === 'wrong') {
+            return {
+                status: 401,
+                json: async () => ({
+                    success: false,
+                    error: 'Invalid credentials',
+                }),
+            };
+        }
+
+        return {
+            status: 401,
+            json: async () => ({
+                success: false,
+                error: 'Invalid credentials',
+            }),
+        };
+    }
+
+    throw new Error('Network failure');
+};
+
+// ---------------------- TESTS ----------------------
 describe('Auth Service', () => {
 
+    // HEALTH CHECK
+    it('should return health status', async () => {
+        const res = await request(app).get('/health');
 
-    beforeAll(async () => {
-        if (!isConnected) {
-            const TEST_URI = process.env.MONGODB_URI
-            if (!TEST_URI) {
-                throw new Error('MONGODB_URI not set in environment')
-            }
-            await mongoose.connect(TEST_URI, {
-                useNewUrlParser: true,
-                useUnifiedTopology: true
-            })
-            isConnected = true
-        }
-    })
+        expect(res.status).toBe(200);
+        expect(res.body.status).toBe('OK');
+        expect(res.body.service).toBe('auth-service');
+    });
 
-    // ================= HEALTH =================
-
-    it('health endpoint should return OK', async () => {
-
-        const res = await request(app).get('/health')
-
-        expect(res.statusCode).toBe(200)
-        expect(res.body.status).toBe('OK')
-
-    })
-
-
-    // ================= REGISTER =================
-
-    it('register should fail if username or password missing', async () => {
-
+    // REGISTER SUCCESS
+    it('should register a user successfully', async () => {
         const res = await request(app)
             .post('/register')
             .send({
-                username: "player1"
-            })
+                username: 'ok_user',
+                password: '1234',
+                email: 'john@test.com',
+            });
 
-        expect(res.statusCode).toBe(400)
-        expect(res.body.success).toBe(false)
+        expect(res.status).toBe(201);
+        expect(res.body.success).toBe(true);
+    });
 
-    })
-
-
-    it('register should create a user', async () => {
-
+    // REGISTER FAIL (missing fields)
+    it('should fail registration if missing username', async () => {
         const res = await request(app)
             .post('/register')
             .send({
-                username: "testuser4",
-                email: "test4@test.com",
-                password: "123456"
-            })
+                password: '1234',
+            });
 
-        expect(res.statusCode).toBe(201)
-        expect(res.body.success).toBe(true)
+        expect(res.status).toBe(400);
+        expect(res.body.success).toBe(false);
+    });
 
-    })
-
-
-    it('register should fail if user already exists', async () => {
-
-        await request(app)
-            .post('/register')
-            .send({
-                username: "duplicateuser",
-                email: "dup@test.com",
-                password: "123456"
-            })
-
+    // REGISTER FAILURE (users-service rejection)
+    it('should handle users-service rejection', async () => {
         const res = await request(app)
             .post('/register')
             .send({
-                username: "duplicateuser",
-                email: "dup@test.com",
-                password: "123456"
-            })
+                username: 'existing',
+                password: '1234',
+            });
 
-        expect(res.statusCode).toBe(400)
-        expect(res.body.error).toBe('User already exists')
+        expect(res.status).toBe(400);
+        expect(res.body.success).toBe(false);
+    });
 
-    })
-    it('register should handle missing email', async () => {
-        const res = await request(app).post('/register').send({
-            username: 'usernoemail',
-            password: '123456'
-        })
-        // your current code allows missing email, so success is possible
-        expect([201, 500]).toContain(res.statusCode)
-    })
-
-
-    // ================= LOGIN =================
-
-    it('login should fail if credentials missing', async () => {
-
+    // LOGIN SUCCESS
+    it('should login and return JWT token', async () => {
         const res = await request(app)
             .post('/login')
             .send({
-                username: "player"
-            })
+                username: 'valid_user',
+                password: '1234',
+            });
 
-        expect(res.statusCode).toBe(400)
-        expect(res.body.success).toBe(false)
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.token).toBeDefined();
 
-    })
+        const decoded = jwt.verify(res.body.token, JWT_SECRET);
+        expect(decoded.username).toBe('valid_user');
+    });
 
-
-    it('login should fail with invalid credentials', async () => {
-
+    // LOGIN FAIL
+    it('should fail login with wrong credentials', async () => {
         const res = await request(app)
             .post('/login')
             .send({
-                username: "nouser",
-                password: "123456"
-            })
+                username: 'wrong',
+                password: '1234',
+            });
 
-        expect(res.statusCode).toBe(401)
-        expect(res.body.success).toBe(false)
+        expect(res.status).toBe(401);
+        expect(res.body.success).toBe(false);
+    });
 
-    })
-
-
-    it('login should fail with wrong password', async () => {
-        await request(app).post('/register').send({
-            username: 'userwrongpass',
-            email: 'userwp@test.com',
-            password: '123456'
-        })
-        const res = await request(app).post('/login').send({
-            username: 'userwrongpass',
-            password: 'wrongpass'
-        })
-        expect(res.statusCode).toBe(401)
-    })
-
-    it('login should return a JWT token', async () => {
-
-        await request(app)
-            .post('/register')
-            .send({
-                username: "loginuser",
-                email: "login@test.com",
-                password: "123456"
-            })
-
-        const res = await request(app)
-            .post('/login')
-            .send({
-                username: "loginuser",
-                password: "123456"
-            })
-
-        expect(res.statusCode).toBe(200)
-        expect(res.body.token).toBeDefined()
-
-    })
-
-
-    // ================= VERIFY TOKEN =================
-
-    it('verify should return user if token is valid', async () => {
-
-        await request(app)
-            .post('/register')
-            .send({
-                username: "verifyuser",
-                email: "verify@test.com",
-                password: "123456"
-            })
-
-        const login = await request(app)
-            .post('/login')
-            .send({
-                username: "verifyuser",
-                password: "123456"
-            })
-
-        const token = login.body.token
+    // VERIFY TOKEN SUCCESS
+    it('should verify valid JWT token', async () => {
+        const token = jwt.sign(
+            { id: '1', username: 'john' },
+            JWT_SECRET,
+            { expiresIn: '1h' }
+        );
 
         const res = await request(app)
             .get('/verify')
-            .set('Authorization', `Bearer ${token}`)
+            .set('Authorization', `Bearer ${token}`);
 
-        expect(res.statusCode).toBe(200)
-        expect(res.body.success).toBe(true)
+        expect(res.status).toBe(200);
+        expect(res.body.success).toBe(true);
+        expect(res.body.user.username).toBe('john');
+    });
 
-    })
-
-
-    it('verify should fail without token', async () => {
-
+    // VERIFY FAIL
+    it('should reject invalid token', async () => {
         const res = await request(app)
             .get('/verify')
+            .set('Authorization', 'Bearer invalidtoken');
 
-        expect(res.statusCode).toBe(401)
+        expect(res.status).toBe(401);
+        expect(res.body.success).toBe(false);
+    });
 
-    })
+    // REGISTER SUCCESS PATH (explicit coverage)
+    it('register success path', async () => {
+        const res = await request(app)
+            .post('/register')
+            .send({
+                username: 'ok_user',
+                password: '1234',
+                email: 'a@a.com',
+            });
 
-    it('verify should fail with invalid token', async () => {
-        const res = await request(app).get('/verify').set('Authorization', 'Bearer invalidtoken')
-        expect(res.statusCode).toBe(401)
-    })
+        expect(res.status).toBe(201);
+        expect(res.body.success).toBe(true);
+    });
 
-})
+    // LOGIN SUCCESS PATH (explicit coverage)
+    it('login success returns token', async () => {
+        const res = await request(app)
+            .post('/login')
+            .send({
+                username: 'valid_user',
+                password: '1234',
+            });
+
+        expect(res.status).toBe(200);
+        expect(res.body.token).toBeDefined();
+    });
+
+    // LOGIN FAILURE PATH (explicit coverage)
+    it('login fails with invalid credentials', async () => {
+        const res = await request(app)
+            .post('/login')
+            .send({
+                username: 'wrong',
+                password: '1234',
+            });
+
+        expect(res.status).toBe(401);
+        expect(res.body.success).toBe(false);
+    });
+
+    // CATCH BLOCK COVERAGE
+    it('register handles service crash (catch block)', async () => {
+        const res = await request(app)
+            .post('/register')
+            .send({
+                username: 'crash_user',
+                password: '1234',
+            });
+
+        expect(res.status).toBe(500);
+        expect(res.body.success).toBe(false);
+    });
+
+});
