@@ -23,6 +23,7 @@ jobs:
       - run: npm --prefix users ci
       - run: npm --prefix webapp ci
       - run: npm --prefix gateway ci
+      - run: npm --prefix authentication ci
 
       - name: Run users tests with MongoDB
         run: npm --prefix users run test:coverage
