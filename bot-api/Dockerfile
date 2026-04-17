@@ -5,6 +5,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-COPY bot-api .
+COPY . .
+
+EXPOSE 6000
 
 CMD ["node", "index.js"]
