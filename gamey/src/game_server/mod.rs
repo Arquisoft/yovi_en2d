@@ -50,6 +50,7 @@ pub fn create_router(state: AppState) -> axum::Router {
             "/{api_version}/ybot/choose/{bot_id}",
             axum::routing::post(bot::choose::choose),
         )
+        .route("/v1/ybot/info", axum::routing::get(ybot_info),)
         .route(
             "/{api_version}/game/pvb/{bot_id}",
             axum::routing::post(game::pvb::pvb_move),

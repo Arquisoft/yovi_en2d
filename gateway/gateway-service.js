@@ -142,10 +142,16 @@ app.get("/game/status", async (req, res) => {
 // to find which ones are actually registered. Returns { ok: true, bots: [...] }.
 app.get("/bots", async (req, res) => {
   try {
-    const response = await axios.get(`${BOT_API_URL}/bots`);
-    return res.status(200).json(response.data);
-  } catch (error) {
-    return forwardAxiosError(res, error, "Bot API unavailable");
+    const response = await axios.get(`${GAMEY_BASE_URL}/v1/ybot/info`);
+    return res.status(200).json({
+      ok: true,
+      bots: response.data.bots || []
+    });
+  } catch (err) {
+    return res.status(502).json({
+      ok: false,
+      error: "Game server unavailable"
+    });
   }
 });
 
