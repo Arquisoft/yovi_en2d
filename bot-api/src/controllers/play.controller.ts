@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { botService } from "../services/bot.service";
-
 class PlayController {
     async playOnce(req: Request, res: Response) {
         try {
@@ -11,12 +10,19 @@ class PlayController {
                 return res.status(400).json({ error: "position required" });
             }
 
-            const position = JSON.parse(rawPosition);
+            let position: any;
+            try {
+                position = JSON.parse(rawPosition);
+            } catch {
+                return res.status(400).json({ error: "position is not valid JSON" });
+            }
 
-            const coords = await botService.getMove(botId, position);
+            // getMove returns { coords } or { action } — pass it through directly
+            const result = await botService.getMove(botId, position);
 
-            res.json({ coords });
-        } catch (err) {
+            res.json(result);
+        } catch (err: any) {
+            console.error("play failed:", err?.message || err);
             res.status(500).json({ error: "play failed" });
         }
     }
