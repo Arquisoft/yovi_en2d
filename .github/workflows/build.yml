@@ -24,6 +24,7 @@ jobs:
       - run: npm --prefix webapp ci
       - run: npm --prefix gateway ci
       - run: npm --prefix authentication ci
+      - run: npm --prefix bot-api ci
       
       - name: Run users tests with MongoDB
         run: npm --prefix users run test:coverage
@@ -51,6 +52,25 @@ jobs:
         run: |
           sed -i "s|SF:${GITHUB_WORKSPACE}/|SF:|g" gamey/lcov.info
           grep '^SF:' gamey/lcov.info | head
+
+      - name: Run bot-api tests
+        run: npm --prefix bot-api run test:coverage
+
+      - name: Debug bot-api coverage
+        run: |
+          ls -R bot-api
+          ls -R bot-api/coverage || true
+          head -n 20 bot-api/coverage/lcov.info || true
+
+      - name: Normalize bot-api coverage paths
+        run: sed -i "s|SF:src/|SF:bot-api/src/|g" bot-api/coverage/lcov.info
+
+      - name: Debug coverage files
+        run: |
+                 ls -R authentication/coverage
+                 ls -R bot-api/coverage
+                 head -n 20 authentication/coverage/lcov.info
+                 head -n 20 bot-api/coverage/lcov.info
       
       - name: Analyze with SonarQube
         uses: SonarSource/sonarqube-scan-action@master
