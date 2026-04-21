@@ -44,7 +44,7 @@ jobs:
         run: cargo install cargo-llvm-cov --locked
 
       - name: Generate gamey code coverage
-        run: cd gamey && cargo llvm-cov --lcov --output-path lcov.info.rs
+        run: cd gamey && cargo llvm-cov --lcov --output-path lcov.info
 
       - name: Normalize Rust coverage paths
         run: |
