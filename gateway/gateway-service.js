@@ -259,5 +259,32 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`Gateway listening on http://localhost:${PORT}`);
   });
 }
+app.get("/play", async (req, res) => {
+  try {
+    const positionRaw = req.query.position;
+    const botId = req.query.bot_id;
+
+    if (typeof positionRaw !== "string") {
+      return res.status(400).json({ error: "Missing position" });
+    }
+
+    const response = await axios.get(`${BOT_API_URL}/play`, {
+      params: {
+        position: positionRaw,   // already a string, no need to re-parse and re-stringify
+        bot_id: botId
+      }
+    });
+
+    // Pass through whatever bot-api returned: { coords } or { action }
+    return res.json(response.data);
+
+  } catch (err) {
+    console.error("PLAY ERROR:", err?.response?.data || err.message);
+    return res.status(500).json({
+      error: "play failed",
+      details: err?.response?.data || err.message
+    });
+  }
+});
 
 export default app;

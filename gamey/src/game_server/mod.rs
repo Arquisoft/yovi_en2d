@@ -22,6 +22,7 @@
 pub mod error;
 pub mod state;
 pub mod version;
+pub mod ybot;
 
 pub mod bot {
     pub mod choose;
@@ -39,6 +40,7 @@ pub use error::ErrorResponse;
 pub use version::*;
 
 use crate::{GameYError, HeuristicBot, YBotRegistry, game_server::state::AppState};
+use crate::game_server::ybot::ybot_info;
 
 /// Creates the Axum router with the given state.
 ///
@@ -50,6 +52,7 @@ pub fn create_router(state: AppState) -> axum::Router {
             "/{api_version}/ybot/choose/{bot_id}",
             axum::routing::post(bot::choose::choose),
         )
+        .route("/v1/ybot/info", axum::routing::get(ybot_info),)
         .route(
             "/{api_version}/game/pvb/{bot_id}",
             axum::routing::post(game::pvb::pvb_move),
