@@ -101,6 +101,8 @@ services:
       - ./users/monitoring/prometheus:/etc/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=2d"
+      - "--storage.tsdb.retention.size=500MB"
     networks:
       - monitor-net
 
