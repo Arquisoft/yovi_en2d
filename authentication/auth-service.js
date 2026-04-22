@@ -3,12 +3,16 @@ require('dotenv').config();
 
 const { register, login, verifyToken } = require('./authentication');
 const authMiddleware = require('./authMiddleware');
-const { httpMetricsMiddleware, registerHttp } = require("./monitoring/middleware/httpMetrics");
+
+const client = require("prom-client");
+const { httpMetricsMiddleware } = require("./monitoring/middleware/httpMetrics");
+
 const app = express();
 
 // Middleware
 app.use(express.json());
 app.use(httpMetricsMiddleware);
+
 // ================= ROUTES =================
 
 // Register new user (delegates to users-service)
@@ -19,7 +23,6 @@ app.post('/login', login);
 
 // Verify JWT token — protected route
 app.get('/verify', authMiddleware, verifyToken);
-
 
 // ================= HEALTH CHECK =================
 
@@ -33,16 +36,14 @@ app.get('/health', (req, res) => {
 
 // ================= METRICS =================
 
-
 app.get("/metrics", async (req, res) => {
-    res.set("Content-Type", registerHttp.contentType);
-    res.end(await registerHttp.metrics());
+    res.set("Content-Type", client.register.contentType);
+    res.end(await client.register.metrics());
 });
 
 // ================= EXPORT FOR TESTING =================
 
 module.exports = app;
-
 
 // ================= START SERVER =================
 
