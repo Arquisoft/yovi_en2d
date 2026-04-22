@@ -12,7 +12,7 @@ const GameResult = require('./models/GameResult');
 const app = express();
 app.use(express.json()); // set up with json
 const PORT = process.env.PORT || 3000; // use port from env or 3000 by default
-const { httpMetricsMiddleware, register } = require("../monitoring/middleware/httpMetrics");
+const { httpMetricsMiddleware, register } = require("./monitoring/middleware/httpMetrics");
 app.use(httpMetricsMiddleware);
 // =============================   USERS ENDPOINTS    ============================================
 

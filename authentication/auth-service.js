@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const { login, verifyToken } = require('./authentication');
 const authMiddleware = require('./authMiddleware');
-const { httpMetricsMiddleware, register } = require("../monitoring/middleware/httpMetrics");
+const { httpMetricsMiddleware, register } = require("./monitoring/middleware/httpMetrics");
 const app = express();
 
 // Middleware
