@@ -152,6 +152,8 @@ services:
     command: -config.file=/etc/promtail/config.yml
     networks:
       - monitor-net
+volumes:
+  loki-data:
 
 networks:
   monitor-net:
