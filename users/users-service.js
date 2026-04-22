@@ -11,10 +11,9 @@ const GameResult = require('./models/GameResult');
 // CONFIGURATION
 const app = express();
 app.use(express.json()); // set up with json
-
+app.use(httpMetricsMiddleware);
 const PORT = process.env.PORT || 3000; // use port from env or 3000 by default
-
-
+const { httpMetricsMiddleware, register } = require("../monitoring/middleware/httpMetrics");
 // =============================   USERS ENDPOINTS    ============================================
 
 /**
@@ -290,15 +289,9 @@ app.get('/health', async (req, res) => {
 module.exports = app;
 
 // ================= METRICS =================
-
-const client = require("prom-client");
-
-// collect default Node metrics (CPU, memory, event loop, etc.)
-client.collectDefaultMetrics();
-
 app.get("/metrics", async (req, res) => {
-    res.set("Content-Type", client.register.contentType);
-    res.end(await client.register.metrics());
+    res.set("Content-Type", register.contentType);
+    res.end(await register.metrics());
 });
 
 // =============================== START THE SERVER   ======================================

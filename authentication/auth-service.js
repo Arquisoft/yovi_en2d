@@ -1,15 +1,14 @@
 const express = require('express');
 require('dotenv').config();
 
-const { register, login, verifyToken } = require('./authentication');
+const { login, verifyToken } = require('./authentication');
 const authMiddleware = require('./authMiddleware');
-
+const { httpMetricsMiddleware, register } = require("../monitoring/middleware/httpMetrics");
 const app = express();
 
 // Middleware
 app.use(express.json());
-
-
+app.use(httpMetricsMiddleware);
 // ================= ROUTES =================
 
 // Register new user (delegates to users-service)
@@ -34,14 +33,10 @@ app.get('/health', (req, res) => {
 
 // ================= METRICS =================
 
-const client = require("prom-client");
-
-// collect default Node metrics (CPU, memory, event loop, etc.)
-client.collectDefaultMetrics();
 
 app.get("/metrics", async (req, res) => {
-    res.set("Content-Type", client.register.contentType);
-    res.end(await client.register.metrics());
+    res.set("Content-Type", register.contentType);
+    res.end(await register.metrics());
 });
 
 // ================= EXPORT FOR TESTING =================
