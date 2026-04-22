@@ -18,9 +18,7 @@ services:
       - monitor-net
 
   users:
-    build:
-      context: .
-      dockerfile: ./users/Dockerfile
+    build: ./users
     container_name: users
     image: ghcr.io/arquisoft/yovi_en2c-users:latest
     ports:
@@ -70,9 +68,7 @@ services:
       - monitor-net
 
   authentication:
-    build:
-      context: .
-      dockerfile: ./authentication/Dockerfile
+    build: ./authentication
     container_name: authentication
     image: ghcr.io/arquisoft/yovi_en2c-authentication:latest
     ports:
@@ -164,10 +160,6 @@ volumes:
   loki-data:
   grafana-data:
   prometheus-data:
-
-
-
-
 
 networks:
   monitor-net:
