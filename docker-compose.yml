@@ -103,7 +103,7 @@ services:
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=30m"
+      - "--storage.tsdb.retention.time=12h"
       - "--storage.tsdb.retention.size=256MB"
     networks:
       - monitor-net
