@@ -31,11 +31,21 @@ const GAME_STATUS_URL = `${GAMEY_BASE_URL}/status`;
 
 // Bot IDs are passed through directly to the Rust server which validates them.
 // No gateway-level whitelist — this avoids mismatches between gateway and registry.
-function pvbMoveUrl(botId) {
+
+
+function buildBotChooseUrl(botId) {
+  return `${GAMEY_BASE_URL}/v1/ybot/choose/${botId}`;
+}
+
+function buildPvbMoveUrl(botId) {
   return `${GAMEY_BASE_URL}/v1/game/pvb/${botId}`;
 }
-function botChooseUrl(botId) {
-  return `${GAMEY_BASE_URL}/v1/ybot/choose/${botId}`;
+
+function assertValidBot(bot) {
+  if (typeof bot !== "string" || !CANDIDATE_BOT_IDS.has(bot)) {
+    throw new Error("Invalid bot id");
+  }
+  return bot;
 }
 
 // Candidate IDs to probe when building the /bots discovery list.
@@ -80,16 +90,26 @@ app.post("/game/new", async (req, res) => {
 app.post("/game/pvb/move", async (req, res) => {
   const { yen, bot, row, col } = req.body;
 
-  if (!yen) return res.status(400).json({ ok: false, error: "Missing YEN" });
+  if (!yen) {
+    return res.status(400).json({ ok: false, error: "Missing YEN" });
+  }
+
   if (typeof row !== "number" || typeof col !== "number") {
     return res.status(400).json({ ok: false, error: "Missing row/col" });
   }
-  if (!bot || typeof bot !== "string" || !CANDIDATE_BOT_IDS.includes(bot)) {
+
+  let safeBot;
+  try {
+    safeBot = assertValidBot(bot);
+  } catch {
     return res.status(400).json({ ok: false, error: "Invalid bot id" });
   }
 
   try {
-    const response = await axios.post(pvbMoveUrl(bot), { yen, row, col }); // NOSONAR
+    const url = buildPvbMoveUrl(safeBot);
+
+    const response = await axios.post(url, { yen, row, col });
+
     const payload = response.data || {};
 
     return res.status(200).json({
@@ -107,14 +127,26 @@ app.post("/game/pvb/move", async (req, res) => {
 app.post("/game/bot/choose", async (req, res) => {
   const { yen, bot } = req.body;
 
-  if (!yen) return res.status(400).json({ ok: false, error: "Missing YEN" });
-  if (!bot || typeof bot !== "string" || !CANDIDATE_BOT_IDS.includes(bot)) {
+  if (!yen) {
+    return res.status(400).json({ ok: false, error: "Missing YEN" });
+  }
+
+  let safeBot;
+  try {
+    safeBot = assertValidBot(bot);
+  } catch {
     return res.status(400).json({ ok: false, error: "Invalid bot id" });
   }
 
   try {
-    const response = await axios.post(botChooseUrl(bot), yen); // NOSONAR
-    return res.status(200).json({ ok: true, coordinates: response.data.coords });
+    const url = buildBotChooseUrl(safeBot);
+
+    const response = await axios.post(url, yen);
+
+    return res.status(200).json({
+      ok: true,
+      coordinates: response.data.coords,
+    });
   } catch (error) {
     return forwardAxiosError(res, error, "Game server unavailable");
   }
@@ -132,7 +164,7 @@ app.get("/game/status", async (req, res) => {
 // Discovery endpoint: probe each candidate bot ID against the Rust server
 // to find which ones are actually registered. Returns { ok: true, bots: [...] }.
 app.get("/bots", async (req, res) => {
-  // Step 1: create a probe game
+  // Step 1: create probe game
   let probeYen;
 
   try {
@@ -145,17 +177,15 @@ app.get("/bots", async (req, res) => {
     });
   }
 
-  const SAFE_BOTS = new Set(CANDIDATE_BOT_IDS);
   const available = [];
 
   // Step 2: probe bots safely
   await Promise.all(
       CANDIDATE_BOT_IDS.map(async (id) => {
-
-        if (!SAFE_BOTS.has(id)) return;
+        if (!CANDIDATE_BOT_IDS.has(id)) return;
 
         try {
-          const url = botChooseUrl(id); // safe because id is validated
+          const url = buildBotChooseUrl(id);
 
           await axios.post(url, probeYen);
 
@@ -166,7 +196,7 @@ app.get("/bots", async (req, res) => {
       })
   );
 
-  // Step 3: return available bots
+  // Step 3: deterministic sorting (no Sonar warning now)
   return res.status(200).json({
     ok: true,
     bots: available.sort((a, b) => a.localeCompare(b)),
