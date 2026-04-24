@@ -12,7 +12,7 @@ type GameEntry = {
     result: "win" | "loss";
     score: number;
     date: string;
-};
+}; //
 
 type StatsData = {
     username: string;
