@@ -33,11 +33,11 @@ const GAME_STATUS_URL = `${GAMEY_BASE_URL}/status`;
 // No gateway-level whitelist — this avoids mismatches between gateway and registry.
 
 
-function buildBotChooseUrl(botId) {
+function botChooseUrl(botId) {
   return `${GAMEY_BASE_URL}/v1/ybot/choose/${botId}`;
 }
 
-function buildPvbMoveUrl(botId) {
+function pvbMoveUrl(botId) {
   return `${GAMEY_BASE_URL}/v1/game/pvb/${botId}`;
 }
 
@@ -106,7 +106,7 @@ app.post("/game/pvb/move", async (req, res) => {
   }
 
   try {
-    const url = buildPvbMoveUrl(safeBot);
+    const url = pvbMoveUrl(safeBot);
 
     const response = await axios.post(url, { yen, row, col });
 
@@ -139,7 +139,7 @@ app.post("/game/bot/choose", async (req, res) => {
   }
 
   try {
-    const url = buildBotChooseUrl(safeBot);
+    const url = botChooseUrl(safeBot);
 
     const response = await axios.post(url, yen);
 
@@ -185,7 +185,7 @@ app.get("/bots", async (req, res) => {
         if (!CANDIDATE_BOT_IDS.has(id)) return;
 
         try {
-          const url = buildBotChooseUrl(id);
+          const url = botChooseUrl(id);
 
           await axios.post(url, probeYen);
 
