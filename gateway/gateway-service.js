@@ -55,9 +55,18 @@ const CANDIDATE_BOT_IDS = new Set([
   "monte_carlo_bot",
 ]);
 
+// Pre-build all probe entries at module init time so no URL is ever constructed
+// from runtime data. Sonar sees only static strings flowing into axios.post().
+const BOT_PROBE_ENTRIES = [...CANDIDATE_BOT_IDS].map((id) => ({
+  id,
+  chooseUrl: buildBotChooseUrl(id),
+  pvbUrl: buildPvbMoveUrl(id),
+}));
+
 function assertValidBot(bot) {
   if (typeof bot !== "string") {
-    throw new Error("Invalid bot id");
+    // Sonar: use TypeError for type-check failures
+    throw new TypeError("Invalid bot id");
   }
   // Return the value from our own Set — never the raw user-supplied string.
   // This prevents Sonar's taint analysis from flagging the downstream URL as
@@ -114,10 +123,11 @@ app.post("/game/pvb/move", async (req, res) => {
     return res.status(400).json({ ok: false, error: "Invalid bot id" });
   }
 
-  try {
-    const url = buildPvbMoveUrl(safeBot);
+  // Look up the pre-built entry so the URL never comes from user input.
+  const entry = BOT_PROBE_ENTRIES.find((e) => e.id === safeBot);
 
-    const response = await axios.post(url, { yen, row, col });
+  try {
+    const response = await axios.post(entry.pvbUrl, { yen, row, col });
 
     const payload = response.data || {};
 
@@ -147,10 +157,11 @@ app.post("/game/bot/choose", async (req, res) => {
     return res.status(400).json({ ok: false, error: "Invalid bot id" });
   }
 
-  try {
-    const url = buildBotChooseUrl(safeBot);
+  // Look up the pre-built entry so the URL never comes from user input.
+  const entry = BOT_PROBE_ENTRIES.find((e) => e.id === safeBot);
 
-    const response = await axios.post(url, yen);
+  try {
+    const response = await axios.post(entry.chooseUrl, yen);
 
     return res.status(200).json({
       ok: true,
@@ -188,12 +199,13 @@ app.get("/bots", async (req, res) => {
 
   const available = [];
 
-  // Step 2: probe each known bot ID against the Rust server
+  // Step 2: probe each known bot ID against the Rust server.
+  // BOT_PROBE_ENTRIES is built at module init from static strings, so
+  // chooseUrl is never derived from user-controlled data (satisfies Sonar S5144).
   await Promise.all(
-      [...CANDIDATE_BOT_IDS].map(async (id) => {
+      BOT_PROBE_ENTRIES.map(async ({ id, chooseUrl }) => {
         try {
-          const url = buildBotChooseUrl(id);
-          await axios.post(url, probeYen);
+          await axios.post(chooseUrl, probeYen);
           available.push(id);
         } catch {
           // ignore unavailable bots
@@ -201,10 +213,12 @@ app.get("/bots", async (req, res) => {
       })
   );
 
-  // Step 3: deterministic sorting
+  // Step 3: deterministic sorting — sort separately to avoid mutating inside json() (Sonar S4043).
+  const sorted = available.toSorted((a, b) => a.localeCompare(b));
+
   return res.status(200).json({
     ok: true,
-    bots: available.sort((a, b) => a.localeCompare(b)),
+    bots: sorted,
   });
 });
 
