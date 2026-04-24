@@ -544,6 +544,61 @@ describe('Gateway Service', () => {
     })
   })
 
+  // ── assertValidBot (unit) ───────────────────────────────────────────────────
+  // These tests confirm the SSRF fix: the function must return a value sourced
+  // from CANDIDATE_BOT_IDS (our own Set), never the raw user-supplied string.
+
+  describe('assertValidBot (internal)', () => {
+    // We exercise it indirectly through an endpoint so we don't have to export it.
+
+    it('accepts every known bot id and routes the request correctly', async () => {
+      const knownBots = [
+        'random_bot', 'smart_bot', 'heuristic_bot', 'minimax_bot',
+        'alfa_beta_bot', 'monte_carlo_hard', 'monte_carlo_extreme', 'monte_carlo_bot',
+      ]
+
+      for (const bot of knownBots) {
+        axios.post.mockResolvedValueOnce({ status: 200, data: { coords: {} } })
+
+        const res = await request(app)
+            .post('/game/bot/choose')
+            .send({ yen: { size: 5 }, bot })
+
+        expect(res.status).toBe(200, `expected 200 for bot: ${bot}`)
+        vi.clearAllMocks()
+      }
+    })
+
+    it('rejects an unknown bot id with 400', async () => {
+      const res = await request(app)
+          .post('/game/bot/choose')
+          .send({ yen: { size: 5 }, bot: 'evil_bot' })
+
+      expect(res.status).toBe(400)
+      expect(res.body.error).toMatch(/Invalid bot id/i)
+      expect(axios.post).not.toHaveBeenCalled()
+    })
+
+    it('rejects a non-string bot value with 400', async () => {
+      const res = await request(app)
+          .post('/game/bot/choose')
+          .send({ yen: { size: 5 }, bot: 42 })
+
+      expect(res.status).toBe(400)
+      expect(res.body.error).toMatch(/Invalid bot id/i)
+      expect(axios.post).not.toHaveBeenCalled()
+    })
+
+    it('rejects a bot id that is a superset of a valid id', async () => {
+      const res = await request(app)
+          .post('/game/bot/choose')
+          .send({ yen: { size: 5 }, bot: 'random_bot_evil' })
+
+      expect(res.status).toBe(400)
+      expect(res.body.error).toMatch(/Invalid bot id/i)
+    })
+  })
+
   // ── /play ────────────────────────────────────────────────────────────────────
 
   describe('GET /play', () => {

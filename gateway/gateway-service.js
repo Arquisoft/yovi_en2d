@@ -56,10 +56,17 @@ const CANDIDATE_BOT_IDS = new Set([
 ]);
 
 function assertValidBot(bot) {
-  if (typeof bot !== "string" || !CANDIDATE_BOT_IDS.has(bot)) {
+  if (typeof bot !== "string") {
     throw new Error("Invalid bot id");
   }
-  return bot;
+  // Return the value from our own Set — never the raw user-supplied string.
+  // This prevents Sonar's taint analysis from flagging the downstream URL as
+  // user-controlled, because the interpolated value provably comes from our
+  // internal data structure, not from req.body.
+  for (const id of CANDIDATE_BOT_IDS) {
+    if (id === bot) return id;
+  }
+  throw new Error("Invalid bot id");
 }
 
 function forwardAxiosError(res, error, fallbackMessage) {
