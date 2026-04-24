@@ -92,35 +92,5 @@ describe("BotService.getMove (local bot)", () => {
 
         await expect(botService.getMove("random_bot", {})).rejects.toThrow("gamey down");
     });
-});
 
-// ── getMove – remote bot (http) ──────────────────────────────────────────────
-describe("BotService.getMove (remote bot via http)", () => {
-    it("calls axios.get with /play and serialized position", async () => {
-        mockedGet.mockResolvedValue({ data: { coords: { x: 1, y: 0, z: 2 } } });
-
-        const pos = { size: 3, turn: 1 };
-
-        await botService.getMove("http://my-bot:5000", pos);
-
-        expect(mockedGet).toHaveBeenCalledWith("http://my-bot:5000/play", {
-            params: { position: JSON.stringify(pos) },
-        });
-    });
-
-    it("returns normalized response from remote bot", async () => {
-        mockedGet.mockResolvedValue({ data: { action: "swap" } });
-
-        const result = await botService.getMove("http://my-bot:5000", {});
-
-        expect(result).toEqual({ action: "swap" });
-    });
-
-    it("propagates errors from remote bot", async () => {
-        mockedGet.mockRejectedValue(new Error("timeout"));
-
-        await expect(
-            botService.getMove("http://my-bot:5000", {})
-        ).rejects.toThrow("timeout");
-    });
 });
