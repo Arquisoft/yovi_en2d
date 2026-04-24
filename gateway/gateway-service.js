@@ -132,29 +132,45 @@ app.get("/game/status", async (req, res) => {
 // Discovery endpoint: probe each candidate bot ID against the Rust server
 // to find which ones are actually registered. Returns { ok: true, bots: [...] }.
 app.get("/bots", async (req, res) => {
-  // Use a minimal valid game to probe the choose endpoint
+  // Step 1: create a probe game
   let probeYen;
+
   try {
     const newRes = await axios.post(GAME_NEW_URL, { size: 3 });
     probeYen = newRes.data;
   } catch {
-    return res.status(502).json({ ok: false, error: "Game server unavailable" });
+    return res.status(502).json({
+      ok: false,
+      error: "Game server unavailable",
+    });
   }
 
+  const SAFE_BOTS = new Set(CANDIDATE_BOT_IDS);
   const available = [];
+
+  // Step 2: probe bots safely
   await Promise.all(
       CANDIDATE_BOT_IDS.map(async (id) => {
+
+        if (!SAFE_BOTS.has(id)) return;
+
         try {
-          await axios.post(botChooseUrl(id), probeYen);
+          const url = botChooseUrl(id); // safe because id is validated
+
+          await axios.post(url, probeYen);
+
           available.push(id);
-        } catch (err) {
-          // 400 "Bot not found" = not registered; any other error = treat as unavailable
-          // Either way, skip it
+        } catch {
+          // ignore unavailable bots
         }
       })
   );
 
-  return res.status(200).json({ ok: true, bots: available.sort() });
+  // Step 3: return available bots
+  return res.status(200).json({
+    ok: true,
+    bots: available.sort((a, b) => a.localeCompare(b)),
+  });
 });
 
 app.post("/createuser", async (req, res) => {
