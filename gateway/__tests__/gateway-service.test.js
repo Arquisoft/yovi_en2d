@@ -511,7 +511,6 @@ describe('Gateway Service', () => {
       expect(res.body.error).toMatch(/User service unavailable/i)
     })
   })
-
   // ── /ranking ─────────────────────────────────────────────────────────────────
 
   describe('GET /ranking', () => {

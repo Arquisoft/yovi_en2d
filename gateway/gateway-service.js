@@ -30,10 +30,6 @@ const CREATE_USER_URL = `${USERS_BASE_URL}/createuser`;
 const GAME_NEW_URL = `${GAMEY_BASE_URL}/game/new`;
 const GAME_STATUS_URL = `${GAMEY_BASE_URL}/status`;
 
-// Bot IDs are passed through directly to the Rust server which validates them.
-// No gateway-level whitelist — this avoids mismatches between gateway and registry.
-
-
 function buildBotChooseUrl(botId) {
   return `${GAMEY_BASE_URL}/v1/ybot/choose/${botId}`;
 }
@@ -62,6 +58,28 @@ const BOT_PROBE_ENTRIES = [...CANDIDATE_BOT_IDS].map((id) => ({
   chooseUrl: buildBotChooseUrl(id),
   pvbUrl: buildPvbMoveUrl(id),
 }));
+
+// Explicit allowlist of every URL this gateway is permitted to call on the
+// game server. Built once at module init from static strings — never from
+// user-supplied data. assertAllowedUrl() validates against this Set before
+// any axios call, satisfying Sonar S5144 (SSRF taint check).
+const ALLOWED_GAME_URLS = new Set([
+  GAME_NEW_URL,
+  GAME_STATUS_URL,
+  ...BOT_PROBE_ENTRIES.map((e) => e.chooseUrl),
+  ...BOT_PROBE_ENTRIES.map((e) => e.pvbUrl),
+]);
+
+/**
+ * Throws if `url` is not in the statically-built allowlist.
+ * This is the SSRF guard: even though all callers already use pre-built URLs,
+ * the explicit check gives Sonar's taint analysis a clear sanitisation point.
+ */
+function assertAllowedUrl(url) {
+  if (!ALLOWED_GAME_URLS.has(url)) {
+    throw new Error(`URL not in allowlist: ${url}`);
+  }
+}
 
 function assertValidBot(bot) {
   if (typeof bot !== "string") {
@@ -98,6 +116,7 @@ function forwardAxiosError(res, error, fallbackMessage) {
 
 app.post("/game/new", async (req, res) => {
   try {
+    assertAllowedUrl(GAME_NEW_URL);
     const response = await axios.post(GAME_NEW_URL, req.body); // NOSONAR
     return res.status(200).json({ ok: true, yen: response.data });
   } catch (error) {
@@ -127,6 +146,7 @@ app.post("/game/pvb/move", async (req, res) => {
   const entry = BOT_PROBE_ENTRIES.find((e) => e.id === safeBot);
 
   try {
+    assertAllowedUrl(entry.pvbUrl);
     const response = await axios.post(entry.pvbUrl, { yen, row, col });
 
     const payload = response.data || {};
@@ -161,6 +181,7 @@ app.post("/game/bot/choose", async (req, res) => {
   const entry = BOT_PROBE_ENTRIES.find((e) => e.id === safeBot);
 
   try {
+    assertAllowedUrl(entry.chooseUrl);
     const response = await axios.post(entry.chooseUrl, yen);
 
     return res.status(200).json({
@@ -174,6 +195,7 @@ app.post("/game/bot/choose", async (req, res) => {
 
 app.get("/game/status", async (req, res) => {
   try {
+    assertAllowedUrl(GAME_STATUS_URL);
     const response = await axios.get(GAME_STATUS_URL);
     return res.status(200).json({ ok: true, message: response.data });
   } catch (error) {
@@ -188,6 +210,7 @@ app.get("/bots", async (req, res) => {
   let probeYen;
 
   try {
+    assertAllowedUrl(GAME_NEW_URL);
     const newRes = await axios.post(GAME_NEW_URL, { size: 3 });
     probeYen = newRes.data;
   } catch {
@@ -200,11 +223,12 @@ app.get("/bots", async (req, res) => {
   const available = [];
 
   // Step 2: probe each known bot ID against the Rust server.
-  // BOT_PROBE_ENTRIES is built at module init from static strings, so
-  // chooseUrl is never derived from user-controlled data (satisfies Sonar S5144).
+  // chooseUrl comes from BOT_PROBE_ENTRIES (static strings) and is verified
+  // against ALLOWED_GAME_URLS before use, satisfying Sonar S5144.
   await Promise.all(
       BOT_PROBE_ENTRIES.map(async ({ id, chooseUrl }) => {
         try {
+          assertAllowedUrl(chooseUrl);
           await axios.post(chooseUrl, probeYen);
           available.push(id);
         } catch {
