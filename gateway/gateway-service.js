@@ -36,7 +36,7 @@ function buildBotChooseUrl(botId) {
 
 function buildPvbMoveUrl(botId) {
   return `${GAMEY_BASE_URL}/v1/game/pvb/${botId}`;
-}
+} //
 
 // Candidate IDs to probe when building the /bots discovery list.
 // Must be a Set so that .has() works correctly in assertValidBot and /bots.
