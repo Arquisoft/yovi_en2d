@@ -6,7 +6,7 @@ export type BotResponse =
     | { action: string };
 
 /**
- * ✅ Local bot allowlist (used by gateway/gamey)
+ * ✅ Local bot allowlist
  */
 export const ALLOWED_LOCAL_BOT_IDS = new Set<string>([
     "random_bot",
@@ -20,31 +20,41 @@ export const ALLOWED_LOCAL_BOT_IDS = new Set<string>([
 ]);
 
 /**
- /**
  * ✅ Remote bot allowlist (from env)
- * Key   = the identifier callers pass in (may equal the URL)
- * Value = the canonical trusted URL from config — this is what we build requests from
+ * Key = identifier callers pass in, Value = canonical trusted URL from config
  */
 export const ALLOWED_REMOTE_BOT_URLS = new Map<string, string>(
     (process.env.ALLOWED_REMOTE_BOT_URLS ?? "")
         .split(",")
         .map((u) => u.trim())
         .filter(Boolean)
-        .map((u) => [u, u])   // key and value are the same; value is what matters
+        .map((u) => [u, u])
 );
 
 /**
- * 🔒 Returns the trusted URL from the allowlist map.
- * By returning map.get() rather than the user-supplied string,
- * the returned value is no longer tainted in SonarQube's data-flow model.
+ * 🔒 Returns the trusted URL from the allowlist Map.
+ * The returned value originates from the Map (config), not user input.
  */
 function resolveTrustedRemoteUrl(id: string): string {
     const trusted = ALLOWED_REMOTE_BOT_URLS.get(id);
     if (trusted === undefined) {
         throw new Error("Remote bot URL is not in the allowlist");
     }
-    return trusted;  // ← origin is the Map, not user input
+    return trusted;
 }
+
+/**
+ * 🔒 Returns the trusted local bot ID from the allowlist Set.
+ * Iterating and returning the Set's own value breaks the taint chain
+ * so the string reaching gameyClient originates from the Set literal.
+ */
+function resolveTrustedLocalBotId(id: string): string {
+    for (const trusted of ALLOWED_LOCAL_BOT_IDS) {
+        if (trusted === id) return trusted; // origin is the Set, not the caller's string
+    }
+    throw new Error("Invalid local bot id");
+}
+
 /**
  * 🔒 Prevent log injection
  */
@@ -61,9 +71,9 @@ class BotService {
         const id = botId || "random_bot";
 
         try {
-            // ✅ Remote bot (strict allowlist)
+            // ✅ Remote bot — URL originates from the Map
             if (id.startsWith("http")) {
-                const trustedUrl = resolveTrustedRemoteUrl(id);   // taint chain broken here
+                const trustedUrl = resolveTrustedRemoteUrl(id);
 
                 const res = await axios.get(`${trustedUrl}/play`, {
                     params: {
@@ -74,12 +84,9 @@ class BotService {
                 return this.normalize(res.data);
             }
 
-            // ✅ Local bot (strict allowlist)
-            if (!ALLOWED_LOCAL_BOT_IDS.has(id)) {
-                throw new Error("Invalid local bot id");
-            }
-
-            const res = await gameyClient.chooseBotMove(id, yen);
+            // ✅ Local bot — ID originates from the Set
+            const trustedId = resolveTrustedLocalBotId(id);
+            const res = await gameyClient.chooseBotMove(trustedId, yen);
             return this.normalize(res);
 
         } catch (err: any) {

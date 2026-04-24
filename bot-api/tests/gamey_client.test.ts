@@ -21,10 +21,10 @@ describe("gameyClient.chooseBotMove", () => {
     it("uses default BASE_URL when env is not set", async () => {
         mockedPost.mockResolvedValue({ data: "ok" });
 
-        await gameyClient.chooseBotMove("bot1", { move: "x" });
+        await gameyClient.chooseBotMove("random_bot", { move: "x" });
 
         expect(mockedPost).toHaveBeenCalledWith(
-            expect.stringContaining("http"),
+            expect.stringContaining("http://gamey:4000"),
             expect.any(Object)
         );
     });
@@ -34,7 +34,7 @@ describe("gameyClient.chooseBotMove", () => {
 
         mockedPost.mockResolvedValue({ data: "ok" });
 
-        await gameyClient.chooseBotMove("bot1", { move: "x" });
+        await gameyClient.chooseBotMove("random_bot", { move: "x" });
 
         expect(mockedPost).toHaveBeenCalledWith(
             expect.stringContaining("http://test-url"),
@@ -45,10 +45,10 @@ describe("gameyClient.chooseBotMove", () => {
     it("includes botId in URL", async () => {
         mockedPost.mockResolvedValue({ data: "ok" });
 
-        await gameyClient.chooseBotMove("bot123", { move: "x" });
+        await gameyClient.chooseBotMove("minimax_bot", { move: "x" });
 
         expect(mockedPost).toHaveBeenCalledWith(
-            expect.stringContaining("bot123"),
+            expect.stringContaining("minimax_bot"),
             expect.any(Object)
         );
     });
@@ -69,7 +69,7 @@ describe("gameyClient.chooseBotMove", () => {
             data: { success: true },
         });
 
-        const result = await gameyClient.chooseBotMove("bot1", { move: "x" });
+        const result = await gameyClient.chooseBotMove("random_bot", { move: "x" });
 
         expect(result).toEqual({ success: true });
     });
@@ -79,7 +79,7 @@ describe("gameyClient.chooseBotMove", () => {
 
         const body = { move: "rock", meta: { speed: 10 } };
 
-        await gameyClient.chooseBotMove("bot1", body);
+        await gameyClient.chooseBotMove("random_bot", body);
 
         expect(mockedPost).toHaveBeenCalledWith(
             expect.any(String),
@@ -91,7 +91,7 @@ describe("gameyClient.chooseBotMove", () => {
         mockedPost.mockRejectedValue(new Error("fail"));
 
         await expect(
-            gameyClient.chooseBotMove("bot1", { move: "x" })
+            gameyClient.chooseBotMove("random_bot", { move: "x" })
         ).rejects.toThrow("fail");
     });
 });
