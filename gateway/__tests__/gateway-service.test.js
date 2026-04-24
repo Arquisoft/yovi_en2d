@@ -566,6 +566,15 @@ describe('Gateway Service', () => {
 
       expect(res.status).toBe(200)
       expect(res.body).toHaveProperty('coords')
+      expect(axios.get).toHaveBeenCalledWith(
+          expect.stringMatching(/\/play$/),
+          expect.objectContaining({
+            params: expect.objectContaining({
+              position: '....X....',
+              bot_id: 'random_bot'
+            })
+          })
+      )
     })
 
     it('returns 500 if bot API fails', async () => {
