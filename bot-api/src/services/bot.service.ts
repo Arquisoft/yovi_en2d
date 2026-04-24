@@ -20,13 +20,10 @@ export const ALLOWED_LOCAL_BOT_IDS = new Set<string>([
 ]);
 
 /**
- * ✅ Remote bot allowlist (from env)
+ * ✅ Remote bot allowlist
  */
 export const ALLOWED_REMOTE_BOT_URLS = new Set<string>(
-    (process.env.ALLOWED_REMOTE_BOT_URLS ?? "")
-        .split(",")
-        .map((u) => u.trim())
-        .filter(Boolean)
+   ["http://my-bot:5000"]
 );
 
 /**
