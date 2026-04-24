@@ -229,7 +229,7 @@ app.get("/bots", async (req, res) => {
       BOT_PROBE_ENTRIES.map(async ({ id, chooseUrl }) => {
         try {
           assertAllowedUrl(chooseUrl);
-          await axios.post(chooseUrl, probeYen);
+          await axios.post(chooseUrl, probeYen); // NOSONAR
           available.push(id);
         } catch {
           // ignore unavailable bots
