@@ -13,7 +13,7 @@ class GameyClient {
             `${BASE_URL}/v1/ybot/choose/${safeBotId}`,
             yen
         );
-
+//
         return res.data;
     }
 }
