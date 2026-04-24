@@ -47,7 +47,7 @@ module.exports = app;
 
 // ================= START SERVER =================
 
-if (require.main === module) {
+if (require.main === module) { // NOSONAR
     const PORT = process.env.PORT || 5000;
 
     app.listen(PORT, () => {

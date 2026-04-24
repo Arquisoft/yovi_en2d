@@ -241,12 +241,12 @@ const Stats: React.FC = () => {
     );
 };
 
-const StatCard: React.FC<{ emoji: string; label: string; value: string | number; color: string }> = ({
-                                                                                                         emoji,
-                                                                                                         label,
-                                                                                                         value,
-                                                                                                         color,
-                                                                                                     }) => (
+const StatCard: React.FC<{
+    emoji: string;
+    label: string;
+    value: string | number;
+    color: string;
+}> = ({ emoji, label, value, color }) => (
     <div
         style={{
             flex: "1 1 120px",
@@ -257,14 +257,16 @@ const StatCard: React.FC<{ emoji: string; label: string; value: string | number;
             textAlign: "center",
             boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
             transition: "transform .2s, box-shadow .2s",
-            cursor: "default",
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
-        onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+        className="stat-card"
     >
         <div style={{ fontSize: 28, marginBottom: 6 }}>{emoji}</div>
-        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color, marginBottom: 4 }}>{value}</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#555" }}>{label}</div>
+        <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color, marginBottom: 4 }}>
+            {value}
+        </div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "#555" }}>
+            {label}
+        </div>
     </div>
 );
 

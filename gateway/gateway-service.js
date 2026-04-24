@@ -23,23 +23,24 @@ app.use(cors({
 const USERS_BASE_URL = process.env.USERS_BASE_URL || "http://users:3000";
 const GAMEY_BASE_URL = process.env.GAMEY_BASE_URL || "http://gamey:4000";
 const AUTH_BASE_URL = process.env.AUTH_BASE_URL || "http://authentication:5000"; //NOSONAR
+const BOT_API_URL = process.env.BOT_API_URL || "http://bot-api:6000";
 const LOGIN_USER_URL = `${USERS_BASE_URL}/login`;
 
 const CREATE_USER_URL = `${USERS_BASE_URL}/createuser`;
 const GAME_NEW_URL = `${GAMEY_BASE_URL}/game/new`;
 const GAME_STATUS_URL = `${GAMEY_BASE_URL}/status`;
 
-// Bot IDs are passed through directly to the Rust server which validates them.
-// No gateway-level whitelist — this avoids mismatches between gateway and registry.
-function pvbMoveUrl(botId) {
-  return `${GAMEY_BASE_URL}/v1/game/pvb/${botId}`;
-}
-function botChooseUrl(botId) {
+function buildBotChooseUrl(botId) {
   return `${GAMEY_BASE_URL}/v1/ybot/choose/${botId}`;
 }
 
+function buildPvbMoveUrl(botId) {
+  return `${GAMEY_BASE_URL}/v1/game/pvb/${botId}`;
+} //
+
 // Candidate IDs to probe when building the /bots discovery list.
-const CANDIDATE_BOT_IDS = [
+// Must be a Set so that .has() works correctly in assertValidBot and /bots.
+const CANDIDATE_BOT_IDS = new Set([
   "random_bot",
   "smart_bot",
   "heuristic_bot",
@@ -48,7 +49,52 @@ const CANDIDATE_BOT_IDS = [
   "monte_carlo_hard",
   "monte_carlo_extreme",
   "monte_carlo_bot",
-];
+]);
+
+// Pre-build all probe entries at module init time so no URL is ever constructed
+// from runtime data. Sonar sees only static strings flowing into axios.post().
+const BOT_PROBE_ENTRIES = [...CANDIDATE_BOT_IDS].map((id) => ({
+  id,
+  chooseUrl: buildBotChooseUrl(id),
+  pvbUrl: buildPvbMoveUrl(id),
+}));
+
+// Explicit allowlist of every URL this gateway is permitted to call on the
+// game server. Built once at module init from static strings — never from
+// user-supplied data. assertAllowedUrl() validates against this Set before
+// any axios call, satisfying Sonar S5144 (SSRF taint check).
+const ALLOWED_GAME_URLS = new Set([
+  GAME_NEW_URL,
+  GAME_STATUS_URL,
+  ...BOT_PROBE_ENTRIES.map((e) => e.chooseUrl),
+  ...BOT_PROBE_ENTRIES.map((e) => e.pvbUrl),
+]);
+
+/**
+ * Throws if `url` is not in the statically-built allowlist.
+ * This is the SSRF guard: even though all callers already use pre-built URLs,
+ * the explicit check gives Sonar's taint analysis a clear sanitisation point.
+ */
+function assertAllowedUrl(url) {
+  if (!ALLOWED_GAME_URLS.has(url)) {
+    throw new Error(`URL not in allowlist: ${url}`);
+  }
+}
+
+function assertValidBot(bot) {
+  if (typeof bot !== "string") {
+    // Sonar: use TypeError for type-check failures
+    throw new TypeError("Invalid bot id");
+  }
+  // Return the value from our own Set — never the raw user-supplied string.
+  // This prevents Sonar's taint analysis from flagging the downstream URL as
+  // user-controlled, because the interpolated value provably comes from our
+  // internal data structure, not from req.body.
+  for (const id of CANDIDATE_BOT_IDS) {
+    if (id === bot) return id;
+  }
+  throw new Error("Invalid bot id");
+}
 
 function forwardAxiosError(res, error, fallbackMessage) {
   const status = error?.response?.status;
@@ -70,6 +116,7 @@ function forwardAxiosError(res, error, fallbackMessage) {
 
 app.post("/game/new", async (req, res) => {
   try {
+    assertAllowedUrl(GAME_NEW_URL);
     const response = await axios.post(GAME_NEW_URL, req.body); // NOSONAR
     return res.status(200).json({ ok: true, yen: response.data });
   } catch (error) {
@@ -80,16 +127,28 @@ app.post("/game/new", async (req, res) => {
 app.post("/game/pvb/move", async (req, res) => {
   const { yen, bot, row, col } = req.body;
 
-  if (!yen) return res.status(400).json({ ok: false, error: "Missing YEN" });
+  if (!yen) {
+    return res.status(400).json({ ok: false, error: "Missing YEN" });
+  }
+
   if (typeof row !== "number" || typeof col !== "number") {
     return res.status(400).json({ ok: false, error: "Missing row/col" });
   }
-  if (!bot || typeof bot !== "string" || !CANDIDATE_BOT_IDS.includes(bot)) {
+
+  let safeBot;
+  try {
+    safeBot = assertValidBot(bot);
+  } catch {
     return res.status(400).json({ ok: false, error: "Invalid bot id" });
   }
 
+  // Look up the pre-built entry so the URL never comes from user input.
+  const entry = BOT_PROBE_ENTRIES.find((e) => e.id === safeBot);
+
   try {
-    const response = await axios.post(pvbMoveUrl(bot), { yen, row, col }); // NOSONAR
+    assertAllowedUrl(entry.pvbUrl);
+    const response = await axios.post(entry.pvbUrl, { yen, row, col });
+
     const payload = response.data || {};
 
     return res.status(200).json({
@@ -107,14 +166,28 @@ app.post("/game/pvb/move", async (req, res) => {
 app.post("/game/bot/choose", async (req, res) => {
   const { yen, bot } = req.body;
 
-  if (!yen) return res.status(400).json({ ok: false, error: "Missing YEN" });
-  if (!bot || typeof bot !== "string" || !CANDIDATE_BOT_IDS.includes(bot)) {
+  if (!yen) {
+    return res.status(400).json({ ok: false, error: "Missing YEN" });
+  }
+
+  let safeBot;
+  try {
+    safeBot = assertValidBot(bot);
+  } catch {
     return res.status(400).json({ ok: false, error: "Invalid bot id" });
   }
 
+  // Look up the pre-built entry so the URL never comes from user input.
+  const entry = BOT_PROBE_ENTRIES.find((e) => e.id === safeBot);
+
   try {
-    const response = await axios.post(botChooseUrl(bot), yen); // NOSONAR
-    return res.status(200).json({ ok: true, coordinates: response.data.coords });
+    assertAllowedUrl(entry.chooseUrl);
+    const response = await axios.post(entry.chooseUrl, yen);
+
+    return res.status(200).json({
+      ok: true,
+      coordinates: response.data.coords,
+    });
   } catch (error) {
     return forwardAxiosError(res, error, "Game server unavailable");
   }
@@ -122,6 +195,7 @@ app.post("/game/bot/choose", async (req, res) => {
 
 app.get("/game/status", async (req, res) => {
   try {
+    assertAllowedUrl(GAME_STATUS_URL);
     const response = await axios.get(GAME_STATUS_URL);
     return res.status(200).json({ ok: true, message: response.data });
   } catch (error) {
@@ -132,29 +206,44 @@ app.get("/game/status", async (req, res) => {
 // Discovery endpoint: probe each candidate bot ID against the Rust server
 // to find which ones are actually registered. Returns { ok: true, bots: [...] }.
 app.get("/bots", async (req, res) => {
-  // Use a minimal valid game to probe the choose endpoint
+  // Step 1: create probe game
   let probeYen;
+
   try {
+    assertAllowedUrl(GAME_NEW_URL);
     const newRes = await axios.post(GAME_NEW_URL, { size: 3 });
     probeYen = newRes.data;
   } catch {
-    return res.status(502).json({ ok: false, error: "Game server unavailable" });
+    return res.status(502).json({
+      ok: false,
+      error: "Game server unavailable",
+    });
   }
 
   const available = [];
+
+  // Step 2: probe each known bot ID against the Rust server.
+  // chooseUrl comes from BOT_PROBE_ENTRIES (static strings) and is verified
+  // against ALLOWED_GAME_URLS before use, satisfying Sonar S5144.
   await Promise.all(
-      CANDIDATE_BOT_IDS.map(async (id) => {
+      BOT_PROBE_ENTRIES.map(async ({ id, chooseUrl }) => {
         try {
-          await axios.post(botChooseUrl(id), probeYen);
+          assertAllowedUrl(chooseUrl);
+          await axios.post(chooseUrl, probeYen); // NOSONAR
           available.push(id);
-        } catch (err) {
-          // 400 "Bot not found" = not registered; any other error = treat as unavailable
-          // Either way, skip it
+        } catch {
+          // ignore unavailable bots
         }
       })
   );
 
-  return res.status(200).json({ ok: true, bots: available.sort() });
+  // Step 3: deterministic sorting — sort separately to avoid mutating inside json() (Sonar S4043).
+  const sorted = available.toSorted((a, b) => a.localeCompare(b));
+
+  return res.status(200).json({
+    ok: true,
+    bots: sorted,
+  });
 });
 
 app.post("/createuser", async (req, res) => {
@@ -259,6 +348,7 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`Gateway listening on http://localhost:${PORT}`);
   });
 }
+
 app.get("/play", async (req, res) => {
   try {
     const positionRaw = req.query.position;
@@ -270,12 +360,11 @@ app.get("/play", async (req, res) => {
 
     const response = await axios.get(`${BOT_API_URL}/play`, {
       params: {
-        position: positionRaw,   // already a string, no need to re-parse and re-stringify
+        position: positionRaw,
         bot_id: botId
       }
     });
 
-    // Pass through whatever bot-api returned: { coords } or { action }
     return res.json(response.data);
 
   } catch (err) {

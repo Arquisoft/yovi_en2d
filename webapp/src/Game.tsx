@@ -236,7 +236,7 @@ const Game: React.FC = () => {
 
             {gameMode === "bot" && (
                 <span style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)", letterSpacing: ".5px", textTransform: "uppercase" }}>
-              vs {botId.replace(/_/g, " ")}
+              vs {botId.replaceAll("_", " ")}
             </span>
             )}
 
