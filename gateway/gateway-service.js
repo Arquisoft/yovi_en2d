@@ -33,23 +33,17 @@ const GAME_STATUS_URL = `${GAMEY_BASE_URL}/status`;
 // No gateway-level whitelist — this avoids mismatches between gateway and registry.
 
 
-function botChooseUrl(botId) {
+function buildBotChooseUrl(botId) {
   return `${GAMEY_BASE_URL}/v1/ybot/choose/${botId}`;
 }
 
-function pvbMoveUrl(botId) {
+function buildPvbMoveUrl(botId) {
   return `${GAMEY_BASE_URL}/v1/game/pvb/${botId}`;
 }
 
-function assertValidBot(bot) {
-  if (typeof bot !== "string" || !CANDIDATE_BOT_IDS.has(bot)) {
-    throw new Error("Invalid bot id");
-  }
-  return bot;
-}
-
 // Candidate IDs to probe when building the /bots discovery list.
-const CANDIDATE_BOT_IDS = [
+// Must be a Set so that .has() works correctly in assertValidBot and /bots.
+const CANDIDATE_BOT_IDS = new Set([
   "random_bot",
   "smart_bot",
   "heuristic_bot",
@@ -58,7 +52,14 @@ const CANDIDATE_BOT_IDS = [
   "monte_carlo_hard",
   "monte_carlo_extreme",
   "monte_carlo_bot",
-];
+]);
+
+function assertValidBot(bot) {
+  if (typeof bot !== "string" || !CANDIDATE_BOT_IDS.has(bot)) {
+    throw new Error("Invalid bot id");
+  }
+  return bot;
+}
 
 function forwardAxiosError(res, error, fallbackMessage) {
   const status = error?.response?.status;
@@ -106,7 +107,7 @@ app.post("/game/pvb/move", async (req, res) => {
   }
 
   try {
-    const url = pvbMoveUrl(safeBot);
+    const url = buildPvbMoveUrl(safeBot);
 
     const response = await axios.post(url, { yen, row, col });
 
@@ -139,7 +140,7 @@ app.post("/game/bot/choose", async (req, res) => {
   }
 
   try {
-    const url = botChooseUrl(safeBot);
+    const url = buildBotChooseUrl(safeBot);
 
     const response = await axios.post(url, yen);
 
@@ -179,16 +180,12 @@ app.get("/bots", async (req, res) => {
 
   const available = [];
 
-  // Step 2: probe bots safely
+  // Step 2: probe each known bot ID against the Rust server
   await Promise.all(
-      CANDIDATE_BOT_IDS.map(async (id) => {
-        if (!CANDIDATE_BOT_IDS.has(id)) return;
-
+      [...CANDIDATE_BOT_IDS].map(async (id) => {
         try {
-          const url = botChooseUrl(id);
-
+          const url = buildBotChooseUrl(id);
           await axios.post(url, probeYen);
-
           available.push(id);
         } catch {
           // ignore unavailable bots
@@ -196,7 +193,7 @@ app.get("/bots", async (req, res) => {
       })
   );
 
-  // Step 3: deterministic sorting (no Sonar warning now)
+  // Step 3: deterministic sorting
   return res.status(200).json({
     ok: true,
     bots: available.sort((a, b) => a.localeCompare(b)),
@@ -305,6 +302,7 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`Gateway listening on http://localhost:${PORT}`);
   });
 }
+
 app.get("/play", async (req, res) => {
   try {
     const positionRaw = req.query.position;
@@ -316,12 +314,11 @@ app.get("/play", async (req, res) => {
 
     const response = await axios.get(`${BOT_API_URL}/play`, {
       params: {
-        position: positionRaw,   // already a string, no need to re-parse and re-stringify
+        position: positionRaw,
         bot_id: botId
       }
     });
 
-    // Pass through whatever bot-api returned: { coords } or { action }
     return res.json(response.data);
 
   } catch (err) {
