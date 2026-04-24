@@ -1,3 +1,6 @@
+// ✅ MUST be before imports
+process.env.ALLOWED_REMOTE_BOT_URLS = "http://my-bot:5000";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("../src/clients/gamey.client", () => ({
@@ -54,30 +57,39 @@ describe("BotService.normalize", () => {
 describe("BotService.getMove (local bot)", () => {
     it("calls gameyClient.chooseBotMove with the botId and position", async () => {
         mockedChooseBotMove.mockResolvedValue({ coords: { x: 1, y: 0, z: 2 } });
+
         await botService.getMove("random_bot", { size: 3 });
+
         expect(mockedChooseBotMove).toHaveBeenCalledWith("random_bot", { size: 3 });
     });
 
     it("defaults to random_bot when botId is undefined", async () => {
         mockedChooseBotMove.mockResolvedValue({ coords: { x: 0, y: 0, z: 0 } });
+
         await botService.getMove(undefined, {});
+
         expect(mockedChooseBotMove).toHaveBeenCalledWith("random_bot", {});
     });
 
     it("returns normalized coords response", async () => {
         mockedChooseBotMove.mockResolvedValue({ coords: { x: 1, y: 2, z: 3 } });
+
         const result = await botService.getMove("random_bot", {});
+
         expect(result).toEqual({ coords: { x: 1, y: 2, z: 3 } });
     });
 
     it("returns normalized action response", async () => {
         mockedChooseBotMove.mockResolvedValue({ action: "resign" });
+
         const result = await botService.getMove("random_bot", {});
+
         expect(result).toEqual({ action: "resign" });
     });
 
     it("propagates errors from gameyClient", async () => {
         mockedChooseBotMove.mockRejectedValue(new Error("gamey down"));
+
         await expect(botService.getMove("random_bot", {})).rejects.toThrow("gamey down");
     });
 });
@@ -86,8 +98,11 @@ describe("BotService.getMove (local bot)", () => {
 describe("BotService.getMove (remote bot via http)", () => {
     it("calls axios.get with /play and serialized position", async () => {
         mockedGet.mockResolvedValue({ data: { coords: { x: 1, y: 0, z: 2 } } });
+
         const pos = { size: 3, turn: 1 };
+
         await botService.getMove("http://my-bot:5000", pos);
+
         expect(mockedGet).toHaveBeenCalledWith("http://my-bot:5000/play", {
             params: { position: JSON.stringify(pos) },
         });
@@ -95,12 +110,17 @@ describe("BotService.getMove (remote bot via http)", () => {
 
     it("returns normalized response from remote bot", async () => {
         mockedGet.mockResolvedValue({ data: { action: "swap" } });
+
         const result = await botService.getMove("http://my-bot:5000", {});
+
         expect(result).toEqual({ action: "swap" });
     });
 
     it("propagates errors from remote bot", async () => {
         mockedGet.mockRejectedValue(new Error("timeout"));
-        await expect(botService.getMove("http://my-bot:5000", {})).rejects.toThrow("timeout");
+
+        await expect(
+            botService.getMove("http://my-bot:5000", {})
+        ).rejects.toThrow("timeout");
     });
 });
