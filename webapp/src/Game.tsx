@@ -383,14 +383,11 @@ const Game: React.FC = () => {
     setBusy(true);
     setError(null);
 
-    // Determine which token the active player uses
-    const activeToken = pvpActivePlayer === 1 ? p1Token : p2Token;
-
     try {
       const res = await fetch(`${API_URL}/game/move`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ yen, row: target.row, col: target.col, player: activeToken }),
+        body: JSON.stringify({ yen, row: target.row, col: target.col }),
       });
       const data = await readGatewayResponse(res);
       if (!res.ok || !data.ok) throw new Error(!data.ok ? data.error : "Backend error");
