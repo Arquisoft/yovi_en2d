@@ -15,7 +15,7 @@ vi.mock("../src/services/bot.service", () => ({
     "http://my-bot:5000",
   ]),
 }));
-
+//
 import { botService } from "../src/services/bot.service";
 
 const mockedGetMove = botService.getMove as ReturnType<typeof vi.fn>;
