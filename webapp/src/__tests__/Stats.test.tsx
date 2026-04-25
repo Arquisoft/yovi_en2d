@@ -144,13 +144,15 @@ describe("Stats component", () => {
     // ── sanitizeUsername ──────────────────────────────────────────────────────
 
     test("redirects when username from localStorage contains path traversal characters", async () => {
+        globalThis.fetch = vi.fn();
+
         renderStats(null, "../../etc/passwd");
 
         await waitFor(() => {
             expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
         });
         // fetch must never be called with a tainted username
-        expect(globalThis.fetch).toBeUndefined();
+        expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 
     test("redirects when username from localStorage contains script injection", async () => {
