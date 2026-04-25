@@ -90,14 +90,14 @@ function checkWin(layout: string[][], token: string): { won: boolean; edges: Win
       const parent = new Map<number, number | null>();
       parent.set(k, null);
       let qi = 0;
-      let touchTop = false, touchLeft = false, touchRight = false;
+      let touchBottom = false, touchLeft = false, touchRight = false;
 
       while (qi < queue.length) {
         const [cr, cc] = queue[qi++];
         const ck = key(cr, cc);
         visited.add(ck);
 
-        if (cr === 0)                         touchTop   = true;
+        if (cr === n - 1)                     touchBottom = true;
         if (cc === 0)                         touchLeft  = true;
         if (cc === layout[cr].length - 1)     touchRight = true;
 
@@ -110,7 +110,7 @@ function checkWin(layout: string[][], token: string): { won: boolean; edges: Win
         }
       }
 
-      if (touchTop && touchLeft && touchRight) {
+      if (touchBottom && touchLeft && touchRight) {
         const edges: WinningEdge[] = [];
         for (const [child, par] of parent) {
           if (par !== null) {
