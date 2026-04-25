@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "@testing-library/jest-dom";
@@ -350,7 +350,7 @@ describe("Game component", () => {
   });
 
   test("redirects to root when username is missing", async () => {
-    renderGame("", "");
+    renderGame(null);
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
