@@ -20,23 +20,27 @@ export const ALLOWED_LOCAL_BOT_IDS = new Set<string>([
 ]);
 
 /**
- * ✅ Remote bot allowlist (from env)
+ * ✅ Remote bot allowlist (from env) — built on every call so that
+ * process.env.ALLOWED_REMOTE_BOT_URLS can be changed at runtime or in tests
+ * without requiring a module reload.
  * Key = identifier callers pass in, Value = canonical trusted URL from config
  */
-export const ALLOWED_REMOTE_BOT_URLS = new Map<string, string>(
-    (process.env.ALLOWED_REMOTE_BOT_URLS ?? "")
-        .split(",")
-        .map((u) => u.trim())
-        .filter(Boolean)
-        .map((u) => [u, u])
-);
+function getAllowedRemoteBotUrls(): Map<string, string> {
+    return new Map<string, string>(
+        (process.env.ALLOWED_REMOTE_BOT_URLS ?? "")
+            .split(",")
+            .map((u) => u.trim())
+            .filter(Boolean)
+            .map((u) => [u, u])
+    );
+}
 
 /**
  * 🔒 Returns the trusted URL from the allowlist Map.
  * The returned value originates from the Map (config), not user input.
  */
 function resolveTrustedRemoteUrl(id: string): string {
-    const trusted = ALLOWED_REMOTE_BOT_URLS.get(id);
+    const trusted = getAllowedRemoteBotUrls().get(id);
     if (trusted === undefined) {
         throw new Error("Remote bot URL is not in the allowlist");
     }
