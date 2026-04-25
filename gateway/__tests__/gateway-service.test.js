@@ -10,6 +10,137 @@ describe('Gateway Service', () => {
     vi.clearAllMocks()
   })
 
+  // game/move
+
+  // ── /game/move ───────────────────────────────────────────────────────────────
+
+  describe('POST /game/move', () => {
+    it('returns updated YEN on success', async () => {
+      axios.post.mockResolvedValueOnce({
+        status: 200,
+        data: { layout: '..X..', players: [], size: 5 }
+      })
+
+      const res = await request(app)
+          .post('/game/move')
+          .send({ yen: { size: 5, layout: '.....' }, row: 0, col: 2 })
+
+      expect(res.status).toBe(200)
+      expect(res.body.ok).toBe(true)
+      expect(res.body).toHaveProperty('yen')
+      expect(axios.post).toHaveBeenCalledTimes(1)
+    })
+
+    it('unwraps YEN when nested under payload.yen', async () => {
+      axios.post.mockResolvedValueOnce({
+        status: 200,
+        data: { yen: { layout: '..X..', players: [], size: 5 }, finished: false, winner: null }
+      })
+
+      const res = await request(app)
+          .post('/game/move')
+          .send({ yen: { size: 5, layout: '.....' }, row: 0, col: 2 })
+
+      expect(res.status).toBe(200)
+      expect(res.body.ok).toBe(true)
+      expect(res.body.yen).toMatchObject({ layout: '..X..' })
+    })
+
+    it('returns finished/winner/winning_edges when game ends', async () => {
+      axios.post.mockResolvedValueOnce({
+        status: 200,
+        data: {
+          yen: { layout: 'XXXXX', players: [], size: 5 },
+          finished: true,
+          winner: 'X',
+          winning_edges: [[0, 0], [0, 4]]
+        }
+      })
+
+      const res = await request(app)
+          .post('/game/move')
+          .send({ yen: { size: 5, layout: '.....' }, row: 0, col: 4 })
+
+      expect(res.status).toBe(200)
+      expect(res.body.ok).toBe(true)
+      expect(res.body.finished).toBe(true)
+      expect(res.body.winner).toBe('X')
+      expect(res.body.winning_edges).toEqual([[0, 0], [0, 4]])
+    })
+
+    it('returns 400 if YEN is missing', async () => {
+      const res = await request(app)
+          .post('/game/move')
+          .send({ row: 0, col: 0 })
+
+      expect(res.status).toBe(400)
+      expect(res.body.ok).toBe(false)
+      expect(res.body.error).toMatch(/Missing YEN/i)
+      expect(axios.post).not.toHaveBeenCalled()
+    })
+
+    it('returns 400 if row is missing', async () => {
+      const res = await request(app)
+          .post('/game/move')
+          .send({ yen: { size: 5 }, col: 0 })
+
+      expect(res.status).toBe(400)
+      expect(res.body.ok).toBe(false)
+      expect(res.body.error).toMatch(/Missing row\/col/i)
+      expect(axios.post).not.toHaveBeenCalled()
+    })
+
+    it('returns 400 if col is missing', async () => {
+      const res = await request(app)
+          .post('/game/move')
+          .send({ yen: { size: 5 }, row: 0 })
+
+      expect(res.status).toBe(400)
+      expect(res.body.ok).toBe(false)
+      expect(res.body.error).toMatch(/Missing row\/col/i)
+      expect(axios.post).not.toHaveBeenCalled()
+    })
+
+    it('propagates upstream HTTP error status', async () => {
+      axios.post.mockRejectedValueOnce({
+        response: { status: 422, data: { error: 'Illegal move' } }
+      })
+
+      const res = await request(app)
+          .post('/game/move')
+          .send({ yen: { size: 5, layout: '.....' }, row: 0, col: 0 })
+
+      expect(res.status).toBe(422)
+      expect(res.body.ok).toBe(false)
+      expect(res.body.error).toMatch(/Illegal move/i)
+    })
+
+    it('returns 502 if game server is unreachable', async () => {
+      axios.post.mockRejectedValueOnce(new Error('Server down'))
+
+      const res = await request(app)
+          .post('/game/move')
+          .send({ yen: { size: 5, layout: '.....' }, row: 0, col: 0 })
+
+      expect(res.status).toBe(502)
+      expect(res.body.ok).toBe(false)
+      expect(res.body.error).toMatch(/Game server unavailable/i)
+    })
+
+    it('calls the correct game move URL', async () => {
+      axios.post.mockResolvedValueOnce({ status: 200, data: {} })
+
+      await request(app)
+          .post('/game/move')
+          .send({ yen: { size: 5 }, row: 2, col: 3 })
+
+      expect(axios.post).toHaveBeenCalledWith(
+          expect.stringContaining('/v1/game/move'),
+          expect.objectContaining({ row: 2, col: 3 })
+      )
+    })
+  })
+
   // ── /game/new ────────────────────────────────────────────────────────────────
 
   describe('POST /game/new', () => {
