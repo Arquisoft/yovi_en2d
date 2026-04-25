@@ -149,10 +149,19 @@ app.post("/game/move", async (req, res) => {
     const response = await axios.post(GAME_MOVE_URL, { yen, row, col }); // NOSONAR
 
     const payload = response.data || {};
+    console.log("[/game/move] engine response keys:", Object.keys(payload));
+    console.log("[/game/move] payload.finished:", payload.finished, "payload.winner:", payload.winner);
+
+    // Engine may return the updated YEN nested under `yen`, or as the root object
+    // (with engine-level fields like `layout`, `players`, `size` at the top level).
+    const isYenObject = (o) => o && typeof o === "object" && ("layout" in o || "players" in o || "size" in o);
+    const updatedYen = isYenObject(payload.yen) ? payload.yen
+        : isYenObject(payload)      ? payload
+            : payload.yen ?? payload;
 
     return res.status(200).json({
       ok: true,
-      yen: payload.yen ?? payload,
+      yen: updatedYen,
       finished: payload.finished === true,
       winner: payload.winner ?? null,
       winning_edges: payload.winning_edges ?? [],
