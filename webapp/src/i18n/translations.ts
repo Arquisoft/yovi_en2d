@@ -104,6 +104,16 @@ export const translations: Record<Lang, Dict> = {
     "game.restart": "Nueva partida",
     "game.pressStart": "Pulsa empezar para jugar",
 
+    // PvP
+    "pvp.player1wins": "¡Jugador 1 gana!",
+    "pvp.player2wins": "¡Jugador 2 gana!",
+    "pvp.p1turn": "Turno del Jugador 1",
+    "pvp.p2turn": "Turno del Jugador 2",
+    "pvp.confirm": "Confirmar",
+    "pvp.pressStart": "Dos jugadores — pulsa empezar para comenzar",
+    "pvp.player1": "Jugador 1",
+    "pvp.player2": "Jugador 2",
+
 
     // Game Ends
     "game.finished.win": "Partida terminada: Has ganado",
@@ -226,6 +236,15 @@ export const translations: Record<Lang, Dict> = {
     "game.restart": "New Game",
     "game.pressStart": "Press Start to begin",
 
+    // PvP
+    "pvp.player1wins": "Player 1 Wins!",
+    "pvp.player2wins": "Player 2 Wins!",
+    "pvp.p1turn": "Player 1's Turn",
+    "pvp.p2turn": "Player 2's Turn",
+    "pvp.confirm": "Confirm",
+    "pvp.pressStart": "Two players — press Start to begin",
+    "pvp.player1": "Player 1",
+    "pvp.player2": "Player 2",
 
 
     // Game Ends
