@@ -21,6 +21,18 @@ type StatsData = {
     games: GameEntry[];
 };
 
+/**
+ * 🔒 Validates that a username only contains safe characters before it can
+ * be used in a URL. This breaks the taint chain from localStorage (Sonar S5144).
+ * Allows letters, digits, underscores, hyphens and dots — max 50 chars.
+ * Returns the original value if valid, or null if it fails validation.
+ */
+function sanitizeUsername(raw: string): string | null {
+    if (typeof raw !== "string") return null;
+    if (!/^[\w.\-]{1,50}$/.test(raw)) return null;
+    return raw;
+}
+
 const Stats: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -28,7 +40,9 @@ const Stats: React.FC = () => {
 
     const username = useMemo(() => {
         const st = (location.state as { username?: string } | null) ?? null;
-        return st?.username ?? localStorage.getItem("username") ?? "";
+        const raw = st?.username ?? localStorage.getItem("username") ?? "";
+        // 🔒 Sanitize before storing in state — nothing tainted reaches the URL
+        return sanitizeUsername(raw) ?? "";
     }, [location.state]);
 
     useEffect(() => {
@@ -43,6 +57,7 @@ const Stats: React.FC = () => {
         if (!username) return;
         setLoading(true);
         setError(null);
+        // username is guaranteed sanitized here — safe to use in URL
         fetch(`${API_URL}/history/${encodeURIComponent(username)}`)
             .then((res) => res.json())
             .then((json) => {
