@@ -39,6 +39,18 @@ function renderStats(usernameFromState: string | null = "Pablo", usernameInStora
     );
 }
 
+/** Builds an array of n GameEntry objects with sequential opponents Game1…GameN */
+function makeGames(n: number) {
+    return Array.from({ length: n }, (_, i) => ({
+        _id: String(i + 1),
+        username: "Pablo",
+        opponent: `Game${i + 1}`,
+        result: i % 2 === 0 ? "win" : "loss",
+        score: 10,
+        date: "2024-01-15T00:00:00Z",
+    }));
+}
+
 const validStatsResponse = {
     success: true,
     username: "Pablo",
@@ -296,6 +308,217 @@ describe("Stats component", () => {
 
         await waitFor(() => {
             expect(screen.getByText("100%")).toBeInTheDocument();
+        });
+    });
+
+    // ── pagination ────────────────────────────────────────────────────────────
+
+    test("does not render pagination controls when there are 5 or fewer games", async () => {
+        globalThis.fetch = vi.fn().mockResolvedValueOnce({
+            json: async () => ({
+                success: true,
+                username: "Pablo",
+                stats: { wins: 3, losses: 2 },
+                total: 5,
+                games: makeGames(5),
+            }),
+        } as Response);
+
+        renderStats();
+
+        await waitFor(() => {
+            expect(screen.getByText("Game5")).toBeInTheDocument();
+        });
+
+        expect(screen.queryByLabelText("pagination")).not.toBeInTheDocument();
+    });
+
+    test("shows only the first 5 games on the first page", async () => {
+        globalThis.fetch = vi.fn().mockResolvedValueOnce({
+            json: async () => ({
+                success: true,
+                username: "Pablo",
+                stats: { wins: 4, losses: 3 },
+                total: 7,
+                games: makeGames(7),
+            }),
+        } as Response);
+
+        renderStats();
+
+        await waitFor(() => {
+            expect(screen.getByText("Game1")).toBeInTheDocument();
+            expect(screen.getByText("Game5")).toBeInTheDocument();
+            expect(screen.queryByText("Game6")).not.toBeInTheDocument();
+            expect(screen.queryByText("Game7")).not.toBeInTheDocument();
+        });
+    });
+
+    test("renders pagination controls when there are more than 5 games", async () => {
+        globalThis.fetch = vi.fn().mockResolvedValueOnce({
+            json: async () => ({
+                success: true,
+                username: "Pablo",
+                stats: { wins: 4, losses: 3 },
+                total: 7,
+                games: makeGames(7),
+            }),
+        } as Response);
+
+        renderStats();
+
+        await waitFor(() => {
+            expect(screen.getByLabelText("pagination")).toBeInTheDocument();
+            expect(screen.getByLabelText("previous page")).toBeInTheDocument();
+            expect(screen.getByLabelText("next page")).toBeInTheDocument();
+            expect(screen.getByLabelText("page 1 of 2")).toBeInTheDocument();
+        });
+    });
+
+    test("navigates to next page and shows remaining games", async () => {
+        const user = userEvent.setup();
+
+        globalThis.fetch = vi.fn().mockResolvedValueOnce({
+            json: async () => ({
+                success: true,
+                username: "Pablo",
+                stats: { wins: 4, losses: 3 },
+                total: 7,
+                games: makeGames(7),
+            }),
+        } as Response);
+
+        renderStats();
+
+        await waitFor(() => expect(screen.getByText("Game1")).toBeInTheDocument());
+
+        await user.click(screen.getByLabelText("next page"));
+
+        await waitFor(() => {
+            expect(screen.queryByText("Game1")).not.toBeInTheDocument();
+            expect(screen.getByText("Game6")).toBeInTheDocument();
+            expect(screen.getByText("Game7")).toBeInTheDocument();
+            expect(screen.getByLabelText("page 2 of 2")).toBeInTheDocument();
+        });
+    });
+
+    test("navigates back to the previous page", async () => {
+        const user = userEvent.setup();
+
+        globalThis.fetch = vi.fn().mockResolvedValueOnce({
+            json: async () => ({
+                success: true,
+                username: "Pablo",
+                stats: { wins: 4, losses: 3 },
+                total: 7,
+                games: makeGames(7),
+            }),
+        } as Response);
+
+        renderStats();
+
+        await waitFor(() => expect(screen.getByText("Game1")).toBeInTheDocument());
+
+        // go to page 2
+        await user.click(screen.getByLabelText("next page"));
+        await waitFor(() => expect(screen.getByText("Game6")).toBeInTheDocument());
+
+        // go back to page 1
+        await user.click(screen.getByLabelText("previous page"));
+        await waitFor(() => {
+            expect(screen.getByText("Game1")).toBeInTheDocument();
+            expect(screen.queryByText("Game6")).not.toBeInTheDocument();
+            expect(screen.getByLabelText("page 1 of 2")).toBeInTheDocument();
+        });
+    });
+
+    test("prev button is disabled on the first page", async () => {
+        globalThis.fetch = vi.fn().mockResolvedValueOnce({
+            json: async () => ({
+                success: true,
+                username: "Pablo",
+                stats: { wins: 4, losses: 3 },
+                total: 7,
+                games: makeGames(7),
+            }),
+        } as Response);
+
+        renderStats();
+
+        await waitFor(() => expect(screen.getByLabelText("pagination")).toBeInTheDocument());
+
+        expect(screen.getByLabelText("previous page")).toBeDisabled();
+        expect(screen.getByLabelText("next page")).not.toBeDisabled();
+    });
+
+    test("next button is disabled on the last page", async () => {
+        const user = userEvent.setup();
+
+        globalThis.fetch = vi.fn().mockResolvedValueOnce({
+            json: async () => ({
+                success: true,
+                username: "Pablo",
+                stats: { wins: 4, losses: 3 },
+                total: 7,
+                games: makeGames(7),
+            }),
+        } as Response);
+
+        renderStats();
+
+        await waitFor(() => expect(screen.getByLabelText("pagination")).toBeInTheDocument());
+
+        await user.click(screen.getByLabelText("next page"));
+
+        await waitFor(() => {
+            expect(screen.getByLabelText("next page")).toBeDisabled();
+            expect(screen.getByLabelText("previous page")).not.toBeDisabled();
+        });
+    });
+
+    test("page resets to 1 when new data is fetched", async () => {
+        const user = userEvent.setup();
+
+        // First render with 7 games — go to page 2
+        globalThis.fetch = vi.fn().mockResolvedValueOnce({
+            json: async () => ({
+                success: true,
+                username: "Pablo",
+                stats: { wins: 4, losses: 3 },
+                total: 7,
+                games: makeGames(7),
+            }),
+        } as Response);
+
+        const { rerender } = renderStats();
+
+        await waitFor(() => expect(screen.getByText("Game1")).toBeInTheDocument());
+        await user.click(screen.getByLabelText("next page"));
+        await waitFor(() => expect(screen.getByLabelText("page 2 of 2")).toBeInTheDocument());
+
+        // Simulate a data refresh that would trigger a new fetch (e.g. component re-mounts)
+        globalThis.fetch = vi.fn().mockResolvedValueOnce({
+            json: async () => ({
+                success: true,
+                username: "Pablo",
+                stats: { wins: 4, losses: 3 },
+                total: 7,
+                games: makeGames(7),
+            }),
+        } as Response);
+
+        rerender(
+            <I18nProvider>
+                <MemoryRouter
+                    initialEntries={[{ pathname: "/stats", state: { username: "Pablo" } }]}
+                >
+                    <Stats />
+                </MemoryRouter>
+            </I18nProvider>
+        );
+
+        await waitFor(() => {
+            expect(screen.getByLabelText("page 1 of 2")).toBeInTheDocument();
         });
     });
 });
