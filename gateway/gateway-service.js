@@ -28,6 +28,7 @@ const LOGIN_USER_URL = `${USERS_BASE_URL}/login`;
 
 const CREATE_USER_URL = `${USERS_BASE_URL}/createuser`;
 const GAME_NEW_URL = `${GAMEY_BASE_URL}/game/new`;
+const GAME_MOVE_URL = `${GAMEY_BASE_URL}/v1/game/move`;
 const GAME_STATUS_URL = `${GAMEY_BASE_URL}/status`;
 
 function buildBotChooseUrl(botId) {
@@ -65,6 +66,7 @@ const BOT_PROBE_ENTRIES = [...CANDIDATE_BOT_IDS].map((id) => ({
 // any axios call, satisfying Sonar S5144 (SSRF taint check).
 const ALLOWED_GAME_URLS = new Set([
   GAME_NEW_URL,
+  GAME_MOVE_URL,
   GAME_STATUS_URL,
   ...BOT_PROBE_ENTRIES.map((e) => e.chooseUrl),
   ...BOT_PROBE_ENTRIES.map((e) => e.pvbUrl),
@@ -119,6 +121,49 @@ app.post("/game/new", async (req, res) => {
     assertAllowedUrl(GAME_NEW_URL);
     const response = await axios.post(GAME_NEW_URL, req.body); // NOSONAR
     return res.status(200).json({ ok: true, yen: response.data });
+  } catch (error) {
+    return forwardAxiosError(res, error, "Game server unavailable");
+  }
+});
+
+/**
+ * POST /game/move
+ * Local PvP move endpoint — applies a single player move without bot follow-up.
+ * Body: { yen, row, col }
+ * The Rust engine determines the current player from the YEN state itself,
+ * so no player token needs to be forwarded.
+ */
+app.post("/game/move", async (req, res) => {
+  const { yen, row, col } = req.body;
+
+  if (!yen) {
+    return res.status(400).json({ ok: false, error: "Missing YEN" });
+  }
+
+  if (typeof row !== "number" || typeof col !== "number") {
+    return res.status(400).json({ ok: false, error: "Missing row/col" });
+  }
+
+  try {
+    assertAllowedUrl(GAME_MOVE_URL);
+    const response = await axios.post(GAME_MOVE_URL, { yen, row, col }); // NOSONAR
+
+    const payload = response.data || {};
+
+    // Engine may return the updated YEN nested under `yen`, or as the root object
+    // (with engine-level fields like `layout`, `players`, `size` at the top level).
+    const isYenObject = (o) => o && typeof o === "object" && ("layout" in o || "players" in o || "size" in o);
+    const updatedYen = isYenObject(payload.yen) ? payload.yen
+        : isYenObject(payload)      ? payload
+            : payload.yen ?? payload;
+
+    return res.status(200).json({
+      ok: true,
+      yen: updatedYen,
+      finished: payload.finished === true,
+      winner: payload.winner ?? null,
+      winning_edges: payload.winning_edges ?? [],
+    });
   } catch (error) {
     return forwardAxiosError(res, error, "Game server unavailable");
   }

@@ -4,6 +4,7 @@ import Navbar from "./Navbar.tsx";
 import { useI18n } from "./i18n/I18nProvider";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "/api";
+const PAGE_SIZE = 5;
 
 type GameEntry = {
     _id: string;
@@ -52,6 +53,7 @@ const Stats: React.FC = () => {
     const [data, setData] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         if (!username) return;
@@ -61,8 +63,12 @@ const Stats: React.FC = () => {
         fetch(`${API_URL}/history/${encodeURIComponent(username)}`)
             .then((res) => res.json())
             .then((json) => {
-                if (json.success) setData(json);
-                else setError(json.error ?? t("stats.noGames"));
+                if (json.success) {
+                    setData(json);
+                    setCurrentPage(1); // reset to first page on fresh data
+                } else {
+                    setError(json.error ?? t("stats.noGames"));
+                }
             })
             .catch(() => setError(t("stats.noGames")))
             .finally(() => setLoading(false));
@@ -79,6 +85,11 @@ const Stats: React.FC = () => {
         data && data.total > 0
             ? Math.round((data.stats.wins / data.total) * 100)
             : 0;
+
+    const totalPages = data ? Math.ceil(data.games.length / PAGE_SIZE) : 0;
+    const paginatedGames = data
+        ? data.games.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+        : [];
 
     return (
         <div className="page" style={{ padding: "20px", background: "var(--bg)" }}>
@@ -225,7 +236,7 @@ const Stats: React.FC = () => {
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {data.games.map((game, i) => (
+                                {paginatedGames.map((game, i) => (
                                     <tr key={game._id} style={{ background: i % 2 === 0 ? "white" : "#f9f9f9" }}>
                                         <td
                                             style={{
@@ -249,6 +260,63 @@ const Stats: React.FC = () => {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 12,
+                                    marginTop: 20,
+                                }}
+                                aria-label="pagination"
+                            >
+                                <button
+                                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    aria-label="previous page"
+                                    style={{
+                                        padding: "8px 16px",
+                                        borderRadius: 8,
+                                        border: "2px solid #001f5b",
+                                        background: currentPage === 1 ? "#f0f0f0" : "#001f5b",
+                                        color: currentPage === 1 ? "#aaa" : "white",
+                                        fontWeight: 700,
+                                        cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                                        transition: "all .2s",
+                                    }}
+                                >
+                                    ‹ Prev
+                                </button>
+
+                                <span
+                                    aria-label={`page ${currentPage} of ${totalPages}`}
+                                    style={{ fontWeight: 700, color: "#001f5b", minWidth: 80, textAlign: "center" }}
+                                >
+                                    {currentPage} / {totalPages}
+                                </span>
+
+                                <button
+                                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    aria-label="next page"
+                                    style={{
+                                        padding: "8px 16px",
+                                        borderRadius: 8,
+                                        border: "2px solid #001f5b",
+                                        background: currentPage === totalPages ? "#f0f0f0" : "#001f5b",
+                                        color: currentPage === totalPages ? "#aaa" : "white",
+                                        fontWeight: 700,
+                                        cursor: currentPage === totalPages ? "not-allowed" : "pointer",
+                                        transition: "all .2s",
+                                    }}
+                                >
+                                    Next ›
+                                </button>
+                            </div>
+                        )}
                     </>
                 )}
             </main>
