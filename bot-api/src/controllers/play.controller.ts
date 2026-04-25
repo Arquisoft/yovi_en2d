@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import {
     botService,
     ALLOWED_LOCAL_BOT_IDS,
-    ALLOWED_REMOTE_BOT_URLS,
+    getAllowedRemoteBotUrls,
 } from "../services/bot.service";
 
 /**
@@ -19,7 +19,7 @@ function resolveSafeBotId(botId: string | undefined): string | null {
     }
 
     // ✅ Remote bots — return the Map's stored value, not the user string
-    const trustedUrl = ALLOWED_REMOTE_BOT_URLS.get(botId);
+    const trustedUrl = getAllowedRemoteBotUrls().get(botId);
     if (trustedUrl !== undefined) return trustedUrl;
 
     return null;

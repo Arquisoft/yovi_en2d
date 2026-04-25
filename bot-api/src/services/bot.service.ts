@@ -25,7 +25,7 @@ export const ALLOWED_LOCAL_BOT_IDS = new Set<string>([
  * without requiring a module reload.
  * Key = identifier callers pass in, Value = canonical trusted URL from config
  */
-function getAllowedRemoteBotUrls(): Map<string, string> {
+export function getAllowedRemoteBotUrls(): Map<string, string> {
     return new Map<string, string>(
         (process.env.ALLOWED_REMOTE_BOT_URLS ?? "")
             .split(",")

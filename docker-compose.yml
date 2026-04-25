@@ -85,7 +85,7 @@ services:
     environment:
       - GAMEY_BASE_URL=http://gamey:4000
       - PORT=6000
-      - ALLOWED_REMOTE_BOT_URLS=http://my-bot:5000,http://other-bot:6000 // NOSONAR
+      - ALLOWED_REMOTE_BOT_URLS=http://my-bot:5000,http://other-bot:6000
     depends_on:
       - gamey
     expose:
