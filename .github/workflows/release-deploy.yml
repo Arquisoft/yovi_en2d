@@ -109,7 +109,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Publish to Registry (users)
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
@@ -129,7 +128,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Publish authentication
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
@@ -149,7 +147,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Publish to Registry (gateway)
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
@@ -169,7 +166,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Publish to Registry (webapp)
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
@@ -190,7 +186,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Publish to Registry (gamey)
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
@@ -210,7 +205,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Publish to Registry (bot-api)
         uses: elgohr/Publish-Docker-Github-Action@v5
         with:
@@ -264,15 +258,12 @@ jobs:
         run: sleep 30
 
       - name: Run Gatling simulation
-        run: |
-          chmod +x gatling/bin/gatling.sh
-          gatling/bin/gatling.sh -s gateway.GatewayFullSimulation -nr
-        env:
-          GATLING_HOME: ${{ github.workspace }}/gatling
+        run: mvn gatling:test -DbaseUrl=https://${{ secrets.DEPLOY_HOST }}
+        working-directory: gatling
 
       - name: Upload Gatling reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gatling-reports
-          path: gatling/results/
+          path: gatling/target/gatling/
