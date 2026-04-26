@@ -77,14 +77,14 @@ class GatewayFullSimulation extends Simulation {
       exec(
         http("Bot choose")
           .post("/api/game/bot/choose")
-          .body(StringBody("""{"yen":"#{gameState}","bot":"random_bot"}"""))
+          .body(StringBody("""{"yen":#{gameState},"bot":"random_bot"}"""))
           .check(status.in(200, 201))
       )
       .pause(1)
       .exec(
         http("PvB move")
           .post("/api/game/pvb/move")
-          .body(StringBody("""{"yen":"#{gameState}","bot":"random_bot","row":1,"col":1}"""))
+          .body(StringBody("""{"yen":#{gameState},"bot":"random_bot","row":1,"col":1}"""))
           .check(status.in(200, 201))
           .check(jsonPath("$.finished").optional.saveAs("finished"))
       )
