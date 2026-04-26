@@ -23,18 +23,18 @@ function renderLeaderboard(username: string | null = "Pablo") {
   if (username) localStorage.setItem("username", username);
 
   return render(
-    <I18nProvider>
-      <MemoryRouter
-        initialEntries={[
-          {
-            pathname: "/leaderboard",
-            state: username ? { username } : undefined,
-          },
-        ]}
-      >
-        <Leaderboard />
-      </MemoryRouter>
-    </I18nProvider>
+      <I18nProvider>
+        <MemoryRouter
+            initialEntries={[
+              {
+                pathname: "/leaderboard",
+                state: username ? { username } : undefined,
+              },
+            ]}
+        >
+          <Leaderboard />
+        </MemoryRouter>
+      </I18nProvider>
   );
 }
 
@@ -54,7 +54,7 @@ function mockLeaderboardFetch(leaderboard = SAMPLE_LEADERBOARD) {
 
 function mockLeaderboardFetchError(error = "Failed to load leaderboard") {
   global.fetch = vi.fn().mockResolvedValueOnce({
-    ok: false,
+    ok: true,
     json: async () => ({ success: false, error }),
   } as unknown as Response);
 }
@@ -80,7 +80,7 @@ describe("Leaderboard component", () => {
     renderLeaderboard();
 
     await waitFor(() => {
-      expect(screen.getByText(/LEADERBOARD|CLASIFICACIÓN/i)).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /LEADERBOARD|CLASIFICACIÓN/i })).toBeInTheDocument();
     });
   });
 
@@ -156,8 +156,8 @@ describe("Leaderboard – my rank banner", () => {
     renderLeaderboard("Alice");
 
     await waitFor(() => {
-      // The banner shows (you) / (tú) next to the username
-      expect(screen.getByText(/you|tú/i)).toBeInTheDocument();
+      // The banner renders (you) / (tú) with parentheses around the translation
+      expect(screen.getByText(/\(you\)|\(tú\)/i)).toBeInTheDocument();
     });
   });
 
@@ -166,7 +166,6 @@ describe("Leaderboard – my rank banner", () => {
     renderLeaderboard("Alice"); // Alice is rank 1
 
     await waitFor(() => {
-      // 🥇 appears at least once (rank banner + table row)
       expect(document.body.textContent).toContain("🥇");
     });
   });
@@ -176,7 +175,8 @@ describe("Leaderboard – my rank banner", () => {
     renderLeaderboard("Diana"); // Diana is rank 4
 
     await waitFor(() => {
-      expect(screen.getByText(/#4/i)).toBeInTheDocument();
+      // The banner uses `#${myRank}` and the table row also uses `#${rank}`
+      expect(screen.getAllByText(/#4/i).length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -184,10 +184,10 @@ describe("Leaderboard – my rank banner", () => {
     mockLeaderboardFetch();
     renderLeaderboard("Stranger"); // not in the sample data
 
-    await waitFor(() => {
-      // No (you) badge should appear
-      expect(screen.queryByText(/\(you\)|\(tú\)/i)).not.toBeInTheDocument();
-    });
+    await waitFor(() => screen.getByText("Alice"));
+
+    // Banner is conditionally rendered only when `me` is non-null
+    expect(screen.queryByText(/\(you\)|\(tú\)/i)).not.toBeInTheDocument();
   });
 
   test("rank banner shows correct wins, losses, and win rate for the current user", async () => {
@@ -195,9 +195,13 @@ describe("Leaderboard – my rank banner", () => {
     renderLeaderboard("Bob"); // 7W 5L 58%
 
     await waitFor(() => {
-      expect(screen.getByText("7")).toBeInTheDocument();
-      expect(screen.getByText("5")).toBeInTheDocument();
+      // The banner stat pills render the raw numbers and the % value
       expect(screen.getByText("58%")).toBeInTheDocument();
+      // wins and losses appear as bare numbers in the banner stat pills
+      const sevens = screen.getAllByText("7");
+      expect(sevens.length).toBeGreaterThanOrEqual(1);
+      const fives = screen.getAllByText("5");
+      expect(fives.length).toBeGreaterThanOrEqual(1);
     });
   });
 });
@@ -210,7 +214,6 @@ describe("Leaderboard – podium", () => {
     renderLeaderboard();
 
     await waitFor(() => {
-      // All three medal emojis should appear (podium + table rows)
       expect(document.body.textContent).toContain("🥇");
       expect(document.body.textContent).toContain("🥈");
       expect(document.body.textContent).toContain("🥉");
@@ -235,7 +238,7 @@ describe("Leaderboard – podium", () => {
       expect(screen.getByText("Alice")).toBeInTheDocument();
     });
 
-    // 🥉 should NOT appear (only 2 players)
+    // 🥉 should NOT appear — podium requires sorted.length >= 3
     expect(document.body.textContent).not.toContain("🥉");
   });
 
@@ -244,7 +247,7 @@ describe("Leaderboard – podium", () => {
     renderLeaderboard();
 
     await waitFor(() => {
-      // Alice has most wins so she should be rank 1
+      // Alice has most wins so she appears in multiple places (podium + table row)
       expect(screen.getAllByText("Alice").length).toBeGreaterThan(0);
     });
   });
@@ -258,6 +261,7 @@ describe("Leaderboard – sort metrics", () => {
     renderLeaderboard();
 
     await waitFor(() => {
+      // Match translated labels from i18n: "Most Wins" / "Más Victorias" etc.
       expect(screen.getByRole("button", { name: /Most Wins|Más Victorias/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /Win Rate|% Victorias/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /Most Active|Más Activo/i })).toBeInTheDocument();
@@ -276,9 +280,9 @@ describe("Leaderboard – sort metrics", () => {
 
     await waitFor(() => {
       // After sorting by winRate: Alice(83%) > Diana(75%) > Bob(58%) > Carlos(38%)
-      const entries = screen.getAllByText(/\d+%/);
-      // The first % value rendered in the table should be 83%
-      expect(entries[0].textContent).toContain("83");
+      // getAllByText returns elements in DOM order; the first % cell should be 83%
+      const percentages = screen.getAllByText(/\d+%/);
+      expect(percentages[0].textContent).toContain("83");
     });
   });
 
@@ -291,10 +295,10 @@ describe("Leaderboard – sort metrics", () => {
 
     await user.click(screen.getByRole("button", { name: /Most Losses|Más Derrotas/i }));
 
-    // Carlos has 8 losses — should appear first
+    // Carlos has 8 losses — his username span should appear first in the table
     await waitFor(() => {
-      const rows = screen.getAllByText(/Carlos|Bob|Alice|Diana/);
-      expect(rows[0].textContent).toContain("Carlos");
+      const nameSpans = screen.getAllByText(/^(Carlos|Bob|Alice|Diana)$/);
+      expect(nameSpans[0].textContent).toBe("Carlos");
     });
   });
 
@@ -307,10 +311,10 @@ describe("Leaderboard – sort metrics", () => {
 
     await user.click(screen.getByRole("button", { name: /Most Active|Más Activo/i }));
 
-    // Carlos has 13 total games — should appear first
+    // Carlos has 13 total games — should appear first in the table
     await waitFor(() => {
-      const rows = screen.getAllByText(/Carlos|Bob|Alice|Diana/);
-      expect(rows[0].textContent).toContain("Carlos");
+      const nameSpans = screen.getAllByText(/^(Carlos|Bob|Alice|Diana)$/);
+      expect(nameSpans[0].textContent).toBe("Carlos");
     });
   });
 
@@ -319,9 +323,9 @@ describe("Leaderboard – sort metrics", () => {
     renderLeaderboard();
 
     await waitFor(() => {
-      // Alice has 10 wins — should be listed first
-      const rows = screen.getAllByText(/Alice|Bob|Carlos|Diana/);
-      expect(rows[0].textContent).toContain("Alice");
+      // Alice has 10 wins — her username span should be first in the table
+      const nameSpans = screen.getAllByText(/^(Alice|Bob|Carlos|Diana)$/);
+      expect(nameSpans[0].textContent).toBe("Alice");
     });
   });
 });
@@ -354,6 +358,7 @@ describe("Leaderboard – table rows", () => {
     renderLeaderboard("Bob");
 
     await waitFor(() => {
+      // The table row badge renders the raw translation without parentheses
       expect(screen.getByText(/^you$|^tú$/i)).toBeInTheDocument();
     });
   });
@@ -364,9 +369,10 @@ describe("Leaderboard – table rows", () => {
 
     await waitFor(() => screen.getByText("Bob"));
 
-    // Only one "you" badge — next to Alice, not Bob
-    const badges = screen.queryAllByText(/^you$|^tú$/i);
-    expect(badges.length).toBe(1);
+    // One badge in the banner (with parens) + one in the table row (without)
+    // Both belong to Alice — no badge should appear next to Bob or others
+    const tableBadges = screen.queryAllByText(/^you$|^tú$/i);
+    expect(tableBadges.length).toBe(1);
   });
 });
 
@@ -389,9 +395,12 @@ describe("Leaderboard – navigation", () => {
     mockLeaderboardFetch();
     renderLeaderboard("Pablo");
 
-    await waitFor(() => screen.getByText(/LEADERBOARD|CLASIFICACIÓN/i));
+    await waitFor(() =>
+        screen.getByRole("heading", { name: /LEADERBOARD|CLASIFICACIÓN/i })
+    );
 
-    await user.click(screen.getByRole("button", { name: /logout|cerrar sesión/i }));
+    // i18n key common.logout → "Logout" (en) / "Salir" (es)
+    await user.click(screen.getByRole("button", { name: /logout|salir/i }));
 
     expect(localStorage.getItem("username")).toBeNull();
     expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
