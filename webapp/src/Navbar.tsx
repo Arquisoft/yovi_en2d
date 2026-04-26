@@ -64,6 +64,13 @@ const Navbar: React.FC<NavbarProps> = ({ username, onLogout, title }) => {
                 {t("common.stats") ?? "Stats"}
               </button>
               <button
+                  className={`nav-link${location.pathname === "/leaderboard" ? " nav-link--active" : ""}`}
+                  onClick={() => go("/leaderboard")}
+                  type="button"
+              >
+                {t("common.leaderboard") ?? "Rankings"}
+              </button>
+              <button
                   className="nav-link nav-link--exit"
                   onClick={onLogout}
                   type="button"
