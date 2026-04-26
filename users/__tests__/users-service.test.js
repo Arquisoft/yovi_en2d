@@ -7,6 +7,9 @@ import { MongoMemoryServer } from 'mongodb-memory-server'
 let mongod
 
 beforeAll(async () => {
+    // Disconnect whatever connection was opened by importing users-service.js (via db.js)
+    await mongoose.disconnect()
+
     mongod = await MongoMemoryServer.create()
     const uri = mongod.getUri()
     await mongoose.connect(uri)
