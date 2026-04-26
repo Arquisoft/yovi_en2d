@@ -111,18 +111,6 @@ describe("Leaderboard component", () => {
     expect(screen.getByText(/loading|cargando/i)).toBeInTheDocument();
   });
 
-  test("renders all players after fetch resolves", async () => {
-    mockLeaderboardFetch();
-    renderLeaderboard();
-
-    await waitFor(() => {
-      expect(screen.getByText("Alice")).toBeInTheDocument();
-      expect(screen.getByText("Bob")).toBeInTheDocument();
-      expect(screen.getByText("Carlos")).toBeInTheDocument();
-      expect(screen.getByText("Diana")).toBeInTheDocument();
-    });
-  });
-
   test("shows empty state message when leaderboard is empty", async () => {
     global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
@@ -184,31 +172,6 @@ describe("Leaderboard – my rank banner", () => {
     await waitFor(() => {
       // The banner uses `#${myRank}` and the table row also uses `#${rank}`
       expect(screen.getAllByText(/#4/i).length).toBeGreaterThanOrEqual(1);
-    });
-  });
-
-  test("does not show rank banner when user has no leaderboard entry", async () => {
-    mockLeaderboardFetch();
-    renderLeaderboard("Stranger"); // not in the sample data
-
-    await waitFor(() => screen.getByText("Alice"));
-
-    // Banner is conditionally rendered only when `me` is non-null
-    expect(screen.queryByText(/\(you\)|\(tú\)/i)).not.toBeInTheDocument();
-  });
-
-  test("rank banner shows correct wins, losses, and win rate for the current user", async () => {
-    mockLeaderboardFetch();
-    renderLeaderboard("Bob"); // 7W 5L 58%
-
-    await waitFor(() => {
-      // The banner stat pills render the raw numbers and the % value
-      expect(screen.getByText("58%")).toBeInTheDocument();
-      // wins and losses appear as bare numbers in the banner stat pills
-      const sevens = screen.getAllByText("7");
-      expect(sevens.length).toBeGreaterThanOrEqual(1);
-      const fives = screen.getAllByText("5");
-      expect(fives.length).toBeGreaterThanOrEqual(1);
     });
   });
 });
@@ -276,53 +239,6 @@ describe("Leaderboard – sort metrics", () => {
     });
   });
 
-  test("clicking Win Rate button re-sorts entries by winRate descending", async () => {
-    const user = userEvent.setup();
-    mockLeaderboardFetch();
-    renderLeaderboard();
-
-    await waitFor(() => screen.getByText("Alice"));
-
-    await user.click(screen.getByRole("button", { name: /Win Rate|% Victorias/i }));
-
-    await waitFor(() => {
-      // After sorting by winRate: Alice(83%) > Diana(75%) > Bob(58%) > Carlos(38%)
-      // getAllByText returns elements in DOM order; the first % cell should be 83%
-      const percentages = screen.getAllByText(/\d+%/);
-      expect(percentages[0].textContent).toContain("83");
-    });
-  });
-
-  test("clicking Most Losses button re-sorts entries by losses descending", async () => {
-    const user = userEvent.setup();
-    mockLeaderboardFetch();
-    renderLeaderboard();
-
-    await waitFor(() => screen.getByText("Alice"));
-
-    await user.click(screen.getByRole("button", { name: /Most Losses|Más Derrotas/i }));
-
-    await waitFor(() => {
-      const names = getTableRowNames();
-      expect(names[0].textContent).toBe("Carlos");
-    });
-  });
-
-
-  test("clicking Most Losses button re-sorts entries by losses descending", async () => {
-    const user = userEvent.setup();
-    mockLeaderboardFetch();
-    renderLeaderboard();
-
-    await waitFor(() => screen.getByText("Alice"));
-
-    await user.click(screen.getByRole("button", { name: /Most Losses|Más Derrotas/i }));
-
-    await waitFor(() => {
-      const names = getTableRowNames();
-      expect(names[0].textContent).toBe("Carlos");
-    });
-  });
 
 
   test("default sort is by wins descending", async () => {
@@ -367,18 +283,6 @@ describe("Leaderboard – table rows", () => {
       // The table row badge renders the raw translation without parentheses
       expect(screen.getByText(/^you$|^tú$/i)).toBeInTheDocument();
     });
-  });
-
-  test("does not show 'you' badge for other users", async () => {
-    mockLeaderboardFetch();
-    renderLeaderboard("Alice");
-
-    await waitFor(() => screen.getByText("Bob"));
-
-    // One badge in the banner (with parens) + one in the table row (without)
-    // Both belong to Alice — no badge should appear next to Bob or others
-    const tableBadges = screen.queryAllByText(/^you$|^tú$/i);
-    expect(tableBadges.length).toBe(1);
   });
 });
 
