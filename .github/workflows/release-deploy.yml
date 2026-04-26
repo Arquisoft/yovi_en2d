@@ -242,8 +242,8 @@ jobs:
             echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" > .env
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
             echo "JWT_EXPIRES=${{ secrets.JWT_EXPIRES }}" >> .env
-            docker compose down
-            docker compose up -d --pull always
+            docker-compose down
+            docker-compose up -d --pull always
 
   load-test:
     name: Run Gatling load tests
