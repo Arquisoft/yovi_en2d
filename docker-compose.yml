@@ -25,6 +25,8 @@ services:
       - "3000:3000"
     environment:
       - MONGODB_URI=${MONGODB_URI}
+    volumes:
+      - mongodb-data:/data/db
     networks:
       - monitor-net
 
@@ -148,6 +150,7 @@ volumes:
   loki-data:
   grafana-data:
   prometheus-data:
+  mongodb-data:
 
 networks:
   monitor-net:
