@@ -52,10 +52,10 @@ const Leaderboard: React.FC = () => {
 
 
     const METRICS: { key: SortMetric; label: string; emoji: string; desc: string }[] = [
-        { key: "wins",    label: "Most Wins",      emoji: "🏆", desc: "Total wins" },
-        { key: "winRate", label: "Win Rate",        emoji: "📈", desc: "Win %" },
-        { key: "total",   label: "Most Active",     emoji: "🎮", desc: "Total games" },
-        { key: "losses",  label: "Most Losses",     emoji: "💀", desc: "Total losses" },
+        { key: "wins",    label: t("leaderboard.metric.wins"),    emoji: "🏆", desc: "Total wins" },
+        { key: "winRate", label: t("leaderboard.metric.winRate"), emoji: "📈", desc: "Win %" },
+        { key: "total",   label: t("leaderboard.metric.total"),   emoji: "🎮", desc: "Total games" },
+        { key: "losses",  label: t("leaderboard.metric.losses"),  emoji: "💀", desc: "Total losses" },
     ];
 
   const username = useMemo(() => {

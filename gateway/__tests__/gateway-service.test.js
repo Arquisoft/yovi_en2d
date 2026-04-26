@@ -10,7 +10,76 @@ describe('Gateway Service', () => {
     vi.clearAllMocks()
   })
 
-  // game/move
+  // ── /leaderboard ─────────────────────────────────────────────────────────────
+
+  describe('GET /leaderboard', () => {
+    it('returns leaderboard data from users service', async () => {
+      axios.get.mockResolvedValueOnce({
+        status: 200,
+        data: {
+          success: true,
+          leaderboard: [
+            { username: 'top1', wins: 5, losses: 1, total: 6, winRate: 83 },
+            { username: 'top2', wins: 3, losses: 2, total: 5, winRate: 60 },
+          ]
+        }
+      })
+
+      const res = await request(app).get('/leaderboard')
+
+      expect(res.status).toBe(200)
+      expect(res.body.success).toBe(true)
+      expect(Array.isArray(res.body.leaderboard)).toBe(true)
+      expect(res.body.leaderboard[0]).toHaveProperty('username')
+      expect(res.body.leaderboard[0]).toHaveProperty('wins')
+      expect(res.body.leaderboard[0]).toHaveProperty('losses')
+      expect(res.body.leaderboard[0]).toHaveProperty('winRate')
+      expect(axios.get).toHaveBeenCalledWith(expect.stringMatching(/\/leaderboard$/))
+    })
+
+    it('returns empty leaderboard when no games have been played', async () => {
+      axios.get.mockResolvedValueOnce({
+        status: 200,
+        data: { success: true, leaderboard: [] }
+      })
+
+      const res = await request(app).get('/leaderboard')
+
+      expect(res.status).toBe(200)
+      expect(res.body.success).toBe(true)
+      expect(res.body.leaderboard).toHaveLength(0)
+    })
+
+    it('returns 500 if users service is unreachable', async () => {
+      axios.get.mockRejectedValueOnce(new Error('Service down'))
+
+      const res = await request(app).get('/leaderboard')
+
+      expect(res.status).toBe(500)
+      expect(res.body.error).toMatch(/User service unavailable/i)
+    })
+
+    it('propagates upstream HTTP error status', async () => {
+      axios.get.mockRejectedValueOnce({
+        response: { status: 503, data: { error: 'Service unavailable' } }
+      })
+
+      const res = await request(app).get('/leaderboard')
+
+      expect(res.status).toBe(503)
+      expect(res.body.error).toMatch(/Service unavailable/i)
+    })
+
+    it('propagates 500 from users service', async () => {
+      axios.get.mockRejectedValueOnce({
+        response: { status: 500, data: { error: 'Internal server error' } }
+      })
+
+      const res = await request(app).get('/leaderboard')
+
+      expect(res.status).toBe(500)
+    })
+  })
 
   // ── /game/move ───────────────────────────────────────────────────────────────
 
