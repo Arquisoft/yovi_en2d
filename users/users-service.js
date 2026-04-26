@@ -269,6 +269,53 @@ app.get('/ranking', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
+// ──────────────────────────────────────────────────────────────────────
+// LEADERBOARD ENDPOINT
+// ──────────────────────────────────────────────────────────────────────
+
+/**
+ * GET /leaderboard
+ * Returns all players with their win/loss stats, sorted by wins by default.
+ */
+app.get('/leaderboard', async (req, res) => {
+    try {
+        const agg = await GameResult.aggregate([
+            {
+                $group: {
+                    _id: '$username',
+                    wins:     { $sum: { $cond: [{ $eq: ['$result', 'win'] }, 1, 0] } },
+                    losses:   { $sum: { $cond: [{ $eq: ['$result', 'loss'] }, 1, 0] } },
+                    total:    { $sum: 1 },
+                    lastGame: { $max: '$date' },
+                },
+            },
+            {
+                $project: {
+                    username: '$_id',
+                    wins: 1,
+                    losses: 1,
+                    total: 1,
+                    lastGame: 1,
+                    winRate: {
+                        $cond: [
+                            { $gt: ['$total', 0] },
+                            { $round: [{ $multiply: [{ $divide: ['$wins', '$total'] }, 100] }, 0] },
+                            0,
+                        ],
+                    },
+                    _id: 0,
+                },
+            },
+            { $sort: { wins: -1, winRate: -1 } },
+        ]);
+
+        res.json({ success: true, leaderboard: agg });
+    } catch (error) {
+        console.error('Error in GET /leaderboard:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 
 /**
  * GET /health
