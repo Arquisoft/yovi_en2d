@@ -91,7 +91,7 @@ const Leaderboard: React.FC = () => {
       if (sortMetric === "total")   return b.total - a.total;
       if (sortMetric === "losses")  return b.losses - a.losses;
       return b.wins - a.wins;
-    });
+    }).slice(0, 5);
   }, [entries, sortMetric]);
 
   const myRank = useMemo(() => sorted.findIndex(e => e.username === username) + 1, [sorted, username]);
