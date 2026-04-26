@@ -6,7 +6,6 @@ import Home from './Home';
 import GameFinished from "./GameFinished";
 import RegistrationForm from './RegistrationForm';
 import Stats from './Stats';
-import Social from './Social';
 import Leaderboard from './Leaderboard';
 
 function App() {
@@ -19,7 +18,6 @@ function App() {
         <Route path="/game" element={<Game />} />
         <Route path="/game/finished" element={<GameFinished />} />
         <Route path="/stats" element={<Stats />} />
-        <Route path="/social" element={<Social />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

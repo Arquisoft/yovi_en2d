@@ -388,6 +388,22 @@ app.get("/ranking", async (req, res) => {
   }
 });
 
+// ── Leaderboard ──────────────────────────────────────────────────────
+
+/**
+ * GET /leaderboard
+ * Full leaderboard with wins, losses, win rate, total games.
+ */
+app.get("/leaderboard", async (req, res) => {
+  try {
+    const response = await axios.get(`${USERS_BASE_URL}/leaderboard`); // NOSONAR
+    return res.status(response.status).json(response.data);
+  } catch (error) {
+    if (error.response) return res.status(error.response.status).json(error.response.data);
+    return res.status(500).json({ success: false, error: "User service unavailable" });
+  }
+});
+
 if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`Gateway listening on http://localhost:${PORT}`);

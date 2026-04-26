@@ -18,6 +18,144 @@ afterAll(async () => {
     await mongod.stop()
 })
 
+describe('GET /leaderboard', () => {
+    beforeAll(async () => {
+        await mongoose.connection.collections['gameresults']?.deleteMany({})
+        await request(app).post('/createuser').send({ username: 'lb_user1', email: 'lb1@uniovi.es', password: '123456' })
+        await request(app).post('/createuser').send({ username: 'lb_user2', email: 'lb2@uniovi.es', password: '123456' })
+        await request(app).post('/createuser').send({ username: 'lb_user3', email: 'lb3@uniovi.es', password: '123456' })
+
+        for (let i = 0; i < 4; i++)
+            await request(app).post('/gameresult').send({ username: 'lb_user1', opponent: 'bot', result: 'win', score: 100 })
+        await request(app).post('/gameresult').send({ username: 'lb_user1', opponent: 'bot', result: 'loss', score: 0 })
+
+        for (let i = 0; i < 2; i++)
+            await request(app).post('/gameresult').send({ username: 'lb_user2', opponent: 'bot', result: 'win', score: 100 })
+        for (let i = 0; i < 3; i++)
+            await request(app).post('/gameresult').send({ username: 'lb_user2', opponent: 'bot', result: 'loss', score: 0 })
+
+        await request(app).post('/gameresult').send({ username: 'lb_user3', opponent: 'bot', result: 'loss', score: 0 })
+    })
+
+    afterEach(() => {
+        vi.restoreAllMocks()
+    })
+
+    it('should return leaderboard with correct shape for each entry', async () => {
+        const res = await request(app).get('/leaderboard').expect(200)
+
+        expect(res.body).toHaveProperty('success', true)
+        expect(Array.isArray(res.body.leaderboard)).toBe(true)
+
+        for (const entry of res.body.leaderboard) {
+            expect(entry).toHaveProperty('username')
+            expect(entry).toHaveProperty('wins')
+            expect(entry).toHaveProperty('losses')
+            expect(entry).toHaveProperty('total')
+            expect(entry).toHaveProperty('winRate')
+            expect(typeof entry.winRate).toBe('number')
+            expect(entry.winRate).toBeGreaterThanOrEqual(0)
+            expect(entry.winRate).toBeLessThanOrEqual(100)
+        }
+    })
+
+    it('should return players sorted by wins descending', async () => {
+        const res = await request(app).get('/leaderboard').expect(200)
+
+        const leaderboard = res.body.leaderboard
+        expect(leaderboard.length).toBeGreaterThanOrEqual(2)
+
+        for (let i = 0; i < leaderboard.length - 1; i++) {
+            expect(leaderboard[i].wins).toBeGreaterThanOrEqual(leaderboard[i + 1].wins)
+        }
+    })
+
+    it('should calculate wins and losses correctly', async () => {
+        const res = await request(app).get('/leaderboard').expect(200)
+
+        const user1 = res.body.leaderboard.find(e => e.username === 'lb_user1')
+        expect(user1).toBeDefined()
+        expect(user1.wins).toBe(4)
+        expect(user1.losses).toBe(1)
+        expect(user1.total).toBe(5)
+
+        const user2 = res.body.leaderboard.find(e => e.username === 'lb_user2')
+        expect(user2).toBeDefined()
+        expect(user2.wins).toBe(2)
+        expect(user2.losses).toBe(3)
+        expect(user2.total).toBe(5)
+    })
+
+    it('should calculate winRate correctly', async () => {
+        const res = await request(app).get('/leaderboard').expect(200)
+
+        const user1 = res.body.leaderboard.find(e => e.username === 'lb_user1')
+        expect(user1.winRate).toBe(80) // 4/5 = 80%
+
+        const user2 = res.body.leaderboard.find(e => e.username === 'lb_user2')
+        expect(user2.winRate).toBe(40) // 2/5 = 40%
+    })
+
+    it('should return empty leaderboard when no games exist', async () => {
+        await mongoose.connection.collections['gameresults']?.deleteMany({})
+
+        const res = await request(app).get('/leaderboard').expect(200)
+
+        expect(res.body).toHaveProperty('success', true)
+        expect(res.body.leaderboard).toHaveLength(0)
+    })
+
+    it('should return 500 when aggregation fails', async () => {
+        const mockError = new Error('Aggregation pipeline failed')
+        const aggregateSpy = vi.spyOn(mongoose.Model, 'aggregate').mockRejectedValueOnce(mockError)
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+        const res = await request(app).get('/leaderboard').expect(500)
+
+        expect(res.body).toHaveProperty('success', false)
+        expect(res.body.error).toBe('Aggregation pipeline failed')
+        expect(consoleErrorSpy).toHaveBeenCalledWith('Error in GET /leaderboard:', mockError)
+
+        aggregateSpy.mockRestore()
+        consoleErrorSpy.mockRestore()
+    })
+
+    it('should return 500 with different aggregation error messages', async () => {
+        const errorMessages = [
+            'MongoDB server not available',
+            '$group stage failed',
+            '$project stage failed: invalid expression',
+            'Database timeout during aggregation',
+        ]
+
+        for (const errorMessage of errorMessages) {
+            const mockError = new Error(errorMessage)
+            const aggregateSpy = vi.spyOn(mongoose.Model, 'aggregate').mockRejectedValueOnce(mockError)
+
+            const res = await request(app).get('/leaderboard').expect(500)
+            expect(res.body.error).toBe(errorMessage)
+
+            aggregateSpy.mockRestore()
+        }
+    })
+
+    it('should handle non-Error objects thrown during aggregation', async () => {
+        const nonErrorObject = { message: 'Unexpected failure', code: 'LEADERBOARD_ERROR' }
+        const aggregateSpy = vi.spyOn(mongoose.Model, 'aggregate').mockRejectedValueOnce(nonErrorObject)
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+        const res = await request(app).get('/leaderboard').expect(500)
+
+        expect(res.body).toHaveProperty('success', false)
+        expect(res.body).toHaveProperty('error')
+        expect(typeof res.body.error).toBe('string')
+        expect(consoleErrorSpy).toHaveBeenCalledWith('Error in GET /leaderboard:', nonErrorObject)
+
+        aggregateSpy.mockRestore()
+        consoleErrorSpy.mockRestore()
+    })
+})
+
 describe('POST /createuser', () => {
 
     afterEach(() => {
