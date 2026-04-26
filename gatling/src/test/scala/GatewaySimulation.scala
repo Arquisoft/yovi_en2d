@@ -36,7 +36,7 @@ class GatewayFullSimulation extends Simulation {
     .pause(1)
     .doIf(session => session("token").asOption[String].isDefined) {
       exec(
-        http("Verify token
+        http("Verify token")
           .get("/api/verify")
           .header("Authorization", "Bearer #{token}")
           .check(status.is(200))
@@ -77,14 +77,14 @@ class GatewayFullSimulation extends Simulation {
       exec(
         http("Bot choose")
           .post("/api/game/bot/choose")
-          .body(StringBody("""{"yen":${gameState},"bot":"random_bot"}"""))
+          .body(StringBody("""{"yen":"#{gameState}","bot":"random_bot"}"""))
           .check(status.in(200, 201))
       )
       .pause(1)
       .exec(
         http("PvB move")
           .post("/api/game/pvb/move")
-          .body(StringBody("""{"yen":${gameState},"bot":"random_bot","row":1,"col":1}"""))
+          .body(StringBody("""{"yen":"#{gameState}","bot":"random_bot","row":1,"col":1}"""))
           .check(status.in(200, 201))
           .check(jsonPath("$.finished").optional.saveAs("finished"))
       )
@@ -106,26 +106,23 @@ class GatewayFullSimulation extends Simulation {
         .check(status.is(200))
     )
 
- setUp(
-   authFlow.inject(
-     atOnceUsers(5),
-     rampUsers(20).during(30.seconds),
-     constantUsersPerSec(5).during(1.minute)
-   ),
-
-   browseFlow.inject(
-     rampUsers(20).during(30.seconds),
-     constantUsersPerSec(10).during(1.minute)
-   ),
-
-   pvbGameFlow.inject(
-     rampUsers(30).during(40.seconds),
-     constantUsersPerSec(10).during(1.minute)
-   ),
-
-   healthFlow.inject(
-     atOnceUsers(5),
-     constantUsersPerSec(5).during(1.minute)
-   )
- ).protocols(httpProtocol)
+  setUp(
+    authFlow.inject(
+      atOnceUsers(5),
+      rampUsers(20).during(30.seconds),
+      constantUsersPerSec(5).during(1.minute)
+    ),
+    browseFlow.inject(
+      rampUsers(20).during(30.seconds),
+      constantUsersPerSec(10).during(1.minute)
+    ),
+    pvbGameFlow.inject(
+      rampUsers(30).during(40.seconds),
+      constantUsersPerSec(10).during(1.minute)
+    ),
+    healthFlow.inject(
+      atOnceUsers(5),
+      constantUsersPerSec(5).during(1.minute)
+    )
+  ).protocols(httpProtocol)
 }
