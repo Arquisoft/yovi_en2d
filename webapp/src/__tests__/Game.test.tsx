@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 import "@testing-library/jest-dom";
@@ -67,7 +67,7 @@ function moveFetch(
     yen: object,
     finished = false,
     winner: string | null = null,
-    winning_edges: any[] = []
+    winning_edges: [number, number][][] = []
 ) {
   return {
     ok: true,
@@ -87,10 +87,12 @@ beforeEach(() => {
     observe() {}
     unobserve() {}
     disconnect() {}
-  } as any;
+  } as unknown as typeof ResizeObserver;
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Flush any remaining state updates before the next test starts
+  await act(async () => {});
   vi.clearAllMocks();
   localStorage.clear();
   vi.useRealTimers();
@@ -361,9 +363,6 @@ describe("Game component", () => {
 // ── PvB: Win / finish flow ─────────────────────────────────────────────────────
 
 describe("PvB – win / finish flow", () => {
-  // FIX: Don't use fake timers for the overlay check — just verify the win
-  // lines appear after the move response. Fake timers block Promise resolution
-  // in jsdom when combined with async fetch mocks, causing timeouts.
   test("shows win overlay when server returns finished=true with winner and edges", async () => {
     const user = userEvent.setup();
 
@@ -391,8 +390,6 @@ describe("PvB – win / finish flow", () => {
     });
   });
 
-  // FIX: Use real timers but with a generous waitFor timeout so the 900ms
-  // navigate timeout fires naturally without blocking microtasks.
   test("navigates to /game/finished after win timeout", async () => {
     const user = userEvent.setup();
 
@@ -489,7 +486,6 @@ describe("PvB – cell interaction edge cases", () => {
 
     const sendBtn = screen.getByRole("button", { name: /Enviar jugada|Send move/i });
 
-    // First circle is occupied by "B"
     await user.click(document.querySelectorAll("circle")[0]);
 
     expect(sendBtn).toBeDisabled();
@@ -507,8 +503,6 @@ describe("PvB – cell interaction edge cases", () => {
     expect(screen.getByRole("button", { name: /Enviar jugada|Send move/i })).toBeDisabled();
   });
 
-  // FIX: After gameStarted=true the button renders t("game.restart") = "New Game",
-  // not "Nueva partida" or "Restart". Match "New Game" instead.
   test("restarting a game resets selection and board", async () => {
     const user = userEvent.setup();
 
@@ -522,13 +516,11 @@ describe("PvB – cell interaction edge cases", () => {
     await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
-    // Select a cell
     await user.click(document.querySelectorAll("circle")[1]);
     await waitFor(() =>
         expect(screen.getByRole("button", { name: /Enviar jugada|Send move/i })).not.toBeDisabled()
     );
 
-    // After game starts, the toolbar button shows t("game.restart") = "New Game"
     await user.click(screen.getByRole("button", { name: /^New Game$|^Nueva partida$/i }));
 
     await waitFor(() =>
@@ -540,8 +532,6 @@ describe("PvB – cell interaction edge cases", () => {
 // ── PvP mode ──────────────────────────────────────────────────────────────────
 
 describe("PvP mode", () => {
-  // FIX: "Player 1" appears in both the TurnIndicator ("Player 1's Turn") and
-  // the legend ("Player 1"). Use a more specific matcher for the turn indicator.
   test("renders turn indicator for player 1 after starting", async () => {
     const user = userEvent.setup();
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch());
@@ -550,8 +540,6 @@ describe("PvP mode", () => {
     await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
-    // The TurnIndicator renders "Player 1's Turn" — be specific to avoid
-    // matching the "Player 1" legend entry as well.
     expect(screen.getByText(/Player 1's Turn|Turno del Jugador 1/i)).toBeInTheDocument();
   });
 
@@ -567,7 +555,6 @@ describe("PvP mode", () => {
     await user.click(screen.getByRole("button", { name: /Confirm|pvp\.confirm/i }));
 
     await waitFor(() => {
-      // Match the turn indicator text specifically (includes "'s Turn" suffix)
       expect(screen.getByText(/Player 2's Turn|Turno del Jugador 2/i)).toBeInTheDocument();
     });
   });
@@ -601,7 +588,6 @@ describe("PvP mode", () => {
   test("shows draw overlay when board is full with no winner", async () => {
     const user = userEvent.setup();
 
-    // One empty cell left; playing it won't create a Y-win
     const nearDrawYen = {
       size: 3,
       players: ["B", "R"],
@@ -615,15 +601,17 @@ describe("PvP mode", () => {
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     const circles = document.querySelectorAll("circle");
-    await user.dblClick(circles[circles.length - 1]);
+
+    // Double-click the last cell and wait for all resulting state updates to settle
+    await act(async () => {
+      await user.dblClick(circles[circles.length - 1]);
+    });
 
     await waitFor(() => {
       expect(document.querySelectorAll("circle").length).toBeGreaterThan(0);
     });
   });
 
-  // FIX: After gameStarted=true the toolbar button shows "New Game" (game.restart),
-  // not "Nueva partida" or "Restart". Match the actual rendered text.
   test("PvP restart button calls fetch again to start a new game", async () => {
     const user = userEvent.setup();
 
@@ -636,9 +624,6 @@ describe("PvP mode", () => {
     await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
-    // After game started, toolbar shows t("game.restart") = "New Game".
-    // There may be multiple "New Game" buttons (toolbar + overlay in other tests),
-    // but here no overlay is shown, so getAllByRole + [0] is safe; or use exact match.
     const newGameBtns = screen.getAllByRole("button", { name: /^New Game$|^Nueva partida$/i });
     await user.click(newGameBtns[0]);
 
@@ -650,7 +635,6 @@ describe("PvP mode", () => {
   test("shows PvP Player 1 wins overlay on size-1 board", async () => {
     const user = userEvent.setup();
 
-    // Size-1 board: single cell touches all three Y-board sides simultaneously
     const singleCellYen = { size: 1, players: ["B", "R"], layout: "." };
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch(singleCellYen));
 
@@ -658,17 +642,15 @@ describe("PvP mode", () => {
     await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
-    // P1 plays the only cell → instant win
-    await user.dblClick(document.querySelectorAll("circle")[0]);
+    await act(async () => {
+      await user.dblClick(document.querySelectorAll("circle")[0]);
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/Player 1 Wins!|¡Jugador 1 gana!/i)).toBeInTheDocument();
     });
   });
 
-  // FIX: Multiple buttons match /Home/i (nav link, logo button, overlay button,
-  // back button). Scope the click to the overlay "Home" button specifically
-  // by finding it within the overlay container or using getAllByRole + last match.
   test("home button on PvP win overlay navigates to /home", async () => {
     const user = userEvent.setup();
 
@@ -679,15 +661,14 @@ describe("PvP mode", () => {
     await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
-    await user.dblClick(document.querySelectorAll("circle")[0]);
+    await act(async () => {
+      await user.dblClick(document.querySelectorAll("circle")[0]);
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/Player 1 Wins!|¡Jugador 1 gana!/i)).toBeInTheDocument();
     });
 
-    // The overlay "Home" button has class "btn--ghost btn--full".
-    // Use getAllByRole and find the ghost-style one (last among "Home"-named buttons
-    // since the overlay renders after the header/nav).
     const homeBtns = screen.getAllByRole("button", { name: /^Home$|^common\.home$/i });
     const overlayHomeBtn = homeBtns[homeBtns.length - 1];
     await user.click(overlayHomeBtn);
@@ -695,8 +676,6 @@ describe("PvP mode", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/home", { state: { username: "Pablo" } });
   });
 
-  // FIX: The overlay "Play Again" button renders t("game.restart") = "New Game",
-  // not "Play Again". Match "New Game" and pick the one inside the overlay.
   test("play again button on PvP win overlay restarts the game", async () => {
     const user = userEvent.setup();
 
@@ -710,17 +689,15 @@ describe("PvP mode", () => {
     await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
-    await user.dblClick(document.querySelectorAll("circle")[0]);
+    await act(async () => {
+      await user.dblClick(document.querySelectorAll("circle")[0]);
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/Player 1 Wins!|¡Jugador 1 gana!/i)).toBeInTheDocument();
     });
 
-    // The overlay's primary button renders t("game.restart") = "New Game"
-    // (class: btn--primary btn--full btn--lg). Multiple "New Game" buttons exist;
-    // pick the large overlay one via its distinctive classes.
     const allNewGameBtns = screen.getAllByRole("button", { name: /^New Game$|^Nueva partida$/i });
-    // The overlay button has btn--lg class; it's the one NOT in the toolbar.
     const overlayPlayAgainBtn = allNewGameBtns.find(
         (btn) => btn.classList.contains("btn--lg")
     );
