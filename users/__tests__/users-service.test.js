@@ -7,9 +7,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server'
 let mongod
 
 beforeAll(async () => {
-    // Disconnect whatever connection was opened by importing users-service.js (via db.js)
     await mongoose.disconnect()
-
     mongod = await MongoMemoryServer.create()
     const uri = mongod.getUri()
     await mongoose.connect(uri)
@@ -21,10 +19,6 @@ afterAll(async () => {
 })
 
 describe('POST /createuser', () => {
-
-    beforeEach(async () => {
-        await mongoose.connection.collections['users']?.deleteMany({});
-    });
 
     afterEach(() => {
         vi.restoreAllMocks()
@@ -244,7 +238,6 @@ describe('POST /createuser', () => {
 
 describe('GET /users', () => {
     beforeAll(async () => {
-        await mongoose.connection.collections['users']?.deleteMany({});
         await request(app).post('/createuser').send({ username: 'usuario1', email: 'user1@uniovi.es', password: '123456' })
         await request(app).post('/createuser').send({ username: 'usuario2', email: 'user2@uniovi.es', password: '123456' })
     });
@@ -300,7 +293,7 @@ describe('GET /users', () => {
         })
 
         it('should handle non-Error objects thrown', async () => {
-            const nonErrorObject = { message: 'Something went wrong', code: 'ERROR', details: 'Custom error object' };
+            const nonErrorObject = { message: 'Something went wrong', code: 'ERROR' };
             const mockQuery = { sort: vi.fn().mockRejectedValueOnce(nonErrorObject) };
             const findSpy = vi.spyOn(mongoose.Model, 'find').mockReturnValueOnce(mockQuery)
 
@@ -328,7 +321,6 @@ describe('GET /users', () => {
 
 describe('POST /gameresult', () => {
     beforeAll(async () => {
-        await mongoose.connection.collections['users']?.deleteMany({});
         await mongoose.connection.collections['gameresults']?.deleteMany({});
         await request(app).post('/createuser').send({ username: 'jugador', email: 'jugador@uniovi.es', password: '123456' })
     });
@@ -342,7 +334,6 @@ describe('POST /gameresult', () => {
 
         expect(res.body).toHaveProperty('success', true)
         expect(res.body).toHaveProperty('message', 'Game result saved')
-        expect(res.body).toHaveProperty('game')
         expect(res.body.game).toHaveProperty('username', 'jugador')
         expect(res.body.game).toHaveProperty('opponent', 'bot_dificil')
         expect(res.body.game).toHaveProperty('result', 'win')
@@ -445,7 +436,7 @@ describe('POST /gameresult', () => {
         })
 
         it('should handle non-Error objects thrown during database operation', async () => {
-            const nonErrorObject = { message: 'Custom database error', code: 12345, details: 'Some detailed information' };
+            const nonErrorObject = { message: 'Custom database error', code: 12345 };
             const findOneSpy = vi.spyOn(mongoose.Model, 'findOne').mockRejectedValueOnce(nonErrorObject)
 
             const res = await request(app)
@@ -499,9 +490,7 @@ describe('POST /gameresult', () => {
 
 describe('GET /history/:username', () => {
     beforeAll(async () => {
-        await mongoose.connection.collections['users']?.deleteMany({});
         await mongoose.connection.collections['gameresults']?.deleteMany({});
-
         await request(app).post('/createuser').send({ username: 'historial_user', email: 'history@uniovi.es', password: '123456' })
         await request(app).post('/gameresult').send({ username: 'historial_user', opponent: 'bot1', result: 'win', score: 100 })
         await request(app).post('/gameresult').send({ username: 'historial_user', opponent: 'bot2', result: 'loss', score: 50 })
@@ -512,7 +501,6 @@ describe('GET /history/:username', () => {
 
         expect(res.body).toHaveProperty('success', true)
         expect(res.body).toHaveProperty('username', 'historial_user')
-        expect(res.body).toHaveProperty('stats')
         expect(res.body.stats).toHaveProperty('wins', 1)
         expect(res.body.stats).toHaveProperty('losses', 1)
         expect(res.body).toHaveProperty('total', 2)
@@ -609,7 +597,7 @@ describe('GET /history/:username', () => {
         })
 
         it('should handle non-Error objects thrown during database operation', async () => {
-            const nonErrorObject = { message: 'Custom database error in history', code: 'HISTORY_ERROR', severity: 'high' };
+            const nonErrorObject = { message: 'Custom database error in history', code: 'HISTORY_ERROR' };
             const findSpy = vi.spyOn(mongoose.Model, 'find').mockImplementationOnce(() => { throw nonErrorObject; })
 
             const res = await request(app).get('/history/history_user').expect(500)
@@ -664,9 +652,7 @@ describe('GET /history/:username', () => {
 
 describe('GET /ranking', () => {
     beforeAll(async () => {
-        await mongoose.connection.collections['users']?.deleteMany({});
         await mongoose.connection.collections['gameresults']?.deleteMany({});
-
         await request(app).post('/createuser').send({ username: 'top1', email: 'top1@uniovi.es', password: '123456' })
         await request(app).post('/createuser').send({ username: 'top2', email: 'top2@uniovi.es', password: '123456' })
         await request(app).post('/createuser').send({ username: 'top3', email: 'top3@uniovi.es', password: '123456' })
@@ -791,7 +777,7 @@ describe('GET /ranking', () => {
         })
 
         it('should handle non-Error objects thrown during aggregation', async () => {
-            const nonErrorObject = { message: 'Custom aggregation error', code: 'AGGREGATION_ERROR', stage: '$group', details: 'Failed to group by username' };
+            const nonErrorObject = { message: 'Custom aggregation error', code: 'AGGREGATION_ERROR' };
             const aggregateSpy = vi.spyOn(mongoose.Model, 'aggregate').mockRejectedValueOnce(nonErrorObject)
             const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -851,8 +837,7 @@ describe('GET /health', () => {
 });
 
 describe('POST /login', () => {
-    beforeEach(async () => {
-        await mongoose.connection.collections['users']?.deleteMany({});
+    beforeAll(async () => {
         await request(app).post('/createuser').send({ username: 'login_user', email: 'login@uniovi.es', password: '123456' });
     });
 
