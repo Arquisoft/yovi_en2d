@@ -14,6 +14,7 @@ export const translations: Record<Lang, Dict> = {
     "common.language": "Idioma",
     "common.user": "Usuario",
     "common.stats": "Estadísticas",
+      "common.leaderboard" : "Clasificación",
 
     // Register
     "register.title": "GameY",
@@ -139,6 +140,11 @@ export const translations: Record<Lang, Dict> = {
     "stats.col.date": "Fecha",
     "stats.win": "VICTORIA",
     "stats.loss": "DERROTA",
+
+      //Leaderboard
+      "leaderboard.title": "CLASIFICACIÓN",
+      "leaderboard.subtitle": "¿Quién domina el tablero?",
+      "leaderboard.empty": "Sin datos aún. ¡Juega algunas partidas!"
   },
 
   en: {
@@ -150,6 +156,7 @@ export const translations: Record<Lang, Dict> = {
     "common.language": "Language",
     "common.user": "User",
     "common.stats": "Stats",
+     "common.leaderboard" : "Leaderboard",
 
     // Register
     "register.title": "GameY",
@@ -271,6 +278,11 @@ export const translations: Record<Lang, Dict> = {
     "stats.col.date": "Date",
     "stats.win": "WIN",
     "stats.loss": "LOSS",
+
+      //Leaderboard
+      "leaderboard.title": "LEADERBOARD",
+      "leaderboard.subtitle": "Who reigns supreme?",
+      "leaderboard.empty": "No data yet. Play some games!"
 
   },
 };
