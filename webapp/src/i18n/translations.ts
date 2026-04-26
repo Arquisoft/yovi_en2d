@@ -144,7 +144,12 @@ export const translations: Record<Lang, Dict> = {
       //Leaderboard
       "leaderboard.title": "CLASIFICACIÓN",
       "leaderboard.subtitle": "¿Quién domina el tablero?",
-      "leaderboard.empty": "Sin datos aún. ¡Juega algunas partidas!"
+      "leaderboard.empty": "Sin datos aún. ¡Juega algunas partidas!",
+      "leaderboard.you": "tú",
+      "leaderboard.metric.wins": "Más Victorias",
+      "leaderboard.metric.winRate":"% Victorias",
+      "leaderboard.metric.total": "Más Activo",
+      "leaderboard.metric.losses": "Más Derrotas"
   },
 
   en: {
@@ -282,7 +287,12 @@ export const translations: Record<Lang, Dict> = {
       //Leaderboard
       "leaderboard.title": "LEADERBOARD",
       "leaderboard.subtitle": "Who reigns supreme?",
-      "leaderboard.empty": "No data yet. Play some games!"
+      "leaderboard.empty": "No data yet. Play some games!",
+      "leaderboard.you": "you",
+      "leaderboard.metric.wins": "Most Wins",
+      "leaderboard.metric.winRate": "Win Rate",
+      "leaderboard.metric.total": "Most Active",
+      "leaderboard.metric.losses": "Most Losses"
 
   },
 };

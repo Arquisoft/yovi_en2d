@@ -44,17 +44,19 @@ const WinBar: React.FC<{ winRate: number; size?: "sm" | "md" }> = ({ winRate, si
   </div>
 );
 
-const METRICS: { key: SortMetric; label: string; emoji: string; desc: string }[] = [
-  { key: "wins",    label: "Most Wins",      emoji: "🏆", desc: "Total wins" },
-  { key: "winRate", label: "Win Rate",        emoji: "📈", desc: "Win %" },
-  { key: "total",   label: "Most Active",     emoji: "🎮", desc: "Total games" },
-  { key: "losses",  label: "Most Losses",     emoji: "💀", desc: "Total losses" },
-];
 
 const Leaderboard: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useI18n();
+
+
+    const METRICS: { key: SortMetric; label: string; emoji: string; desc: string }[] = [
+        { key: "wins",    label: "Most Wins",      emoji: "🏆", desc: "Total wins" },
+        { key: "winRate", label: "Win Rate",        emoji: "📈", desc: "Win %" },
+        { key: "total",   label: "Most Active",     emoji: "🎮", desc: "Total games" },
+        { key: "losses",  label: "Most Losses",     emoji: "💀", desc: "Total losses" },
+    ];
 
   const username = useMemo(() => {
     const st = (location.state as { username?: string } | null) ?? null;
@@ -127,7 +129,7 @@ const Leaderboard: React.FC = () => {
             </span>
             <Avatar username={me.username} size={40} />
             <div style={{ flex: 1 }}>
-              <p style={{ fontWeight: 700, fontSize: 15, margin: 0 }}>{me.username} <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 400 }}>(you)</span></p>
+              <p style={{ fontWeight: 700, fontSize: 15, margin: 0 }}>{me.username} <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 400 }}>({t("leaderboard.you") ?? "you"})</span></p>
               <div style={{ marginTop: 4, maxWidth: 180 }}>
                 <WinBar winRate={me.winRate} size="sm" />
               </div>
@@ -231,7 +233,9 @@ const Leaderboard: React.FC = () => {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
                           <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{entry.username}</span>
-                          {isMe && <span style={{ fontSize: 10, background: "#c0392b20", color: "#c0392b", padding: "1px 6px", borderRadius: 99, fontWeight: 700 }}>you</span>}
+                          {isMe && <span style={{ fontSize: 10, background: "#c0392b20", color: "#c0392b", padding: "1px 6px", borderRadius: 99, fontWeight: 700 }}>
+  {t("leaderboard.you") ?? "you"}
+</span>}
                         </div>
                         <WinBar winRate={entry.winRate} size="sm" />
                       </div>
