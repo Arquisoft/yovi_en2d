@@ -4,15 +4,87 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en2d&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en2d)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Arquisoft_yovi_en2d&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Arquisoft_yovi_en2d)
 
-This project contains the yovi_en2d lab assignment. 
+This project contains the **yovi_en2d lab assignment**, a distributed game platform composed of multiple services and a Rust-based game engine.
 
-[Yovi website](https://gameofy.publicvm.com/)
+---
 
-[Documentation website](https://arquisoft.github.io/yovi_en2d)
+## 🌐 Live Systems
 
-[Bot-api documentation website](https://arquisoft.github.io/yovi_en2d/swagger/)
+- 🎮 Game platform: https://gameofy.publicvm.com/
+- 📚 Architecture documentation: https://arquisoft.github.io/yovi_en2d
+- 🤖 Bot API (Swagger / OpenAPI docs): https://arquisoft.github.io/yovi_en2d/swagger.html
 
-## Project Structure
+---
+
+## 🧱 Project Architecture
+
+The system follows a **microservices architecture** with clear separation of concerns:
+
+- `webapp/` → React + TypeScript frontend
+- `users/` → Node.js + Express user service
+- `gamey/` → Rust game engine + bot system
+- `gateway/` → API Gateway (single entry point)
+- `docs/` → Arc42 documentation (Asciidoctor + PlantUML)
+
+### 🔁 Request Flow
+- NGINX handles HTTPS + routing
+- API Gateway exposes unified API surface
+- Services communicate via REST
+
+---
+
+## 🤖 Bot API
+
+The Bot API enables interoperability between bots and the game engine.
+
+### Features
+
+- Stateless moves: `/play`
+- Stateful sessions: `/games`
+- Supports:
+  - Built-in bots (`random_bot`, `minimax_bot`, etc.)
+  - External bots via allowlist
+
+### Documentation
+
+👉 https://arquisoft.github.io/yovi_en2d/swagger.html
+
+---
+
+## 🧪 Testing Strategy
+
+The system uses a layered testing approach:
+
+### ✔ Unit Tests
+- `users`: Jest tests
+- `gamey`: Rust unit tests (`cargo test`)
+- `webapp`: component tests
+
+### ✔ End-to-End Tests (Playwright + Cucumber)
+
+E2E tests validate full user journeys.
+
+### Flows tested
+
+#### Authentication
+- login
+- registration
+- session validation
+
+#### Gameplay
+- navigate to game
+- select bot + board size
+- start match
+- play moves
+
+#### Bot interaction
+- player move → API Gateway → gamey engine
+- bot response → returned via engine
+- UI updates state
+
+---
+
+## 📁 Project Structure
 
 The project is divided into three main components, each in its own directory:
 
@@ -23,13 +95,15 @@ The project is divided into three main components, each in its own directory:
 
 Each component has its own `package.json` file with the necessary scripts to run and test the application.
 
-## Basic Features
+## 🎮 Basic Features
 
-- **User Registration**: The web application provides a simple form to register new users.
-- **User Service**: The user service receives the registration request, simulates some processing, and returns a welcome message.
-- **GameY**: A basic Game engine which only chooses a random piece.
+- User registration and login
+- Game creation and bot gameplay
+- Multiple AI bot strategies
+- Game statistics tracking
+- Persistent user data
 
-## Components
+## ⚙️ Components
 
 ### Webapp
 
@@ -62,11 +136,11 @@ The `gamey` component is a Rust-based game engine with bot support, built with [
 - `Cargo.toml`: Project manifest with dependencies and metadata.
 - `Dockerfile`: Defines the Docker image for the gamey service.
 
-## Running the Project
+## 🚀 Running the Project
 
 You can run this project using Docker (recommended) or locally without Docker.
 
-### With Docker
+### 🐳 With Docker
 
 This is the easiest way to get the project running. You need to have [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed.
 
@@ -84,7 +158,7 @@ This command will build the Docker images for both the `webapp` and `users` serv
 - User service API: [http://localhost:3000](http://localhost:3000)
 - Gamey API: [http://localhost:4000](http://localhost:4000)
 
-### Without Docker
+### 💻 Without Docker
 
 To run the project locally without Docker, you will need to run each component in a separate terminal.
 
