@@ -1,0 +1,748 @@
+openapi: 3.0.3
+info:
+  title: GameOfY API Gateway
+  description: |
+    API Gateway for the GameOfY platform. Routes requests to internal
+    microservices: game engine (Rust/Gamey), user service, authentication
+    service, and bot API.
+  version: 1.0.0
+
+servers:
+  - url: https://gameofy.publicvm.com:8080
+    description: Production
+  - url: http://localhost:8080
+    description: Local development
+
+tags:
+  - name: Game
+    description: Core game lifecycle (create, move, status)
+  - name: Bot
+    description: Bot discovery and bot-assisted moves
+  - name: Auth
+    description: Registration, login, and token verification
+  - name: Users
+    description: Game history, ranking, and leaderboard
+
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+
+  # ── Game ──────────────────────────────────────────────────────────────────
+
+  /game/new:
+    post:
+      tags: [Game]
+      summary: Create a new game
+      description: |
+        Creates a new Hex game and returns the initial YEN (game state object)
+        produced by the Rust engine.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                size:
+                  type: integer
+                  description: Board size (e.g. 11 for an 11×11 board).
+                  example: 11
+      responses:
+        '200':
+          description: Game created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewGameResponse'
+        '502':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /game/move:
+    post:
+      tags: [Game]
+      summary: Apply a player move (PvP)
+      description: |
+        Applies a single player move to the game state. The Rust engine
+        determines the active player from the YEN itself — no player token is
+        required. Use this endpoint for Player-vs-Player games.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        '200':
+          description: Move applied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoveResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '502':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /game/pvb/move:
+    post:
+      tags: [Game]
+      summary: Apply a player move and get bot reply (PvB)
+      description: |
+        Applies the human player's move and immediately returns the bot's
+        counter-move in a single round-trip. Use this endpoint for
+        Player-vs-Bot games.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/MoveRequest'
+                - type: object
+                  required: [bot]
+                  properties:
+                    bot:
+                      $ref: '#/components/schemas/BotId'
+      responses:
+        '200':
+          description: Both moves applied; updated state returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MoveResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '502':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /game/status:
+    get:
+      tags: [Game]
+      summary: Game engine health check
+      description: Proxies the Rust engine's `/status` endpoint.
+      responses:
+        '200':
+          description: Engine is reachable.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Game server is running"
+        '502':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  # ── Bot ───────────────────────────────────────────────────────────────────
+
+  /bots:
+    get:
+      tags: [Bot]
+      summary: List available bots
+      description: |
+        Probes the Rust engine for each known bot ID and returns the subset
+        that is currently registered. The list is sorted alphabetically.
+
+        Candidate IDs checked: `random_bot`, `smart_bot`, `heuristic_bot`,
+        `minimax_bot`, `alfa_beta_bot`, `monte_carlo_bot`,
+        `monte_carlo_hard`, `monte_carlo_extreme`.
+      responses:
+        '200':
+          description: Discovery successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, bots]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  bots:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BotId'
+                    example: ["alfa_beta_bot", "minimax_bot", "random_bot"]
+        '502':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /game/bot/choose:
+    post:
+      tags: [Bot]
+      summary: Ask a bot to choose its next move
+      description: |
+        Sends the current game state to the specified bot and returns the
+        coordinates the bot selected — without applying the move.
+        Useful when you want to animate or preview the bot's decision
+        before committing it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [yen, bot]
+              properties:
+                yen:
+                  $ref: '#/components/schemas/Yen'
+                bot:
+                  $ref: '#/components/schemas/BotId'
+      responses:
+        '200':
+          description: Bot coordinates returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, coordinates]
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  coordinates:
+                    type: object
+                    description: The cell the bot chose.
+                    properties:
+                      row:
+                        type: integer
+                        example: 4
+                      col:
+                        type: integer
+                        example: 7
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '502':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /play:
+    get:
+      tags: [Bot]
+      summary: Get a bot move via the bot-API service
+      description: |
+        Queries the separate bot-API microservice (`bot-api:6000`) for a move.
+        Accepts a raw position string and an optional bot ID.
+      parameters:
+        - name: position
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Serialised board position string understood by the bot-API service.
+          example: "11x11:..."
+        - name: bot_id
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/BotId'
+      responses:
+        '200':
+          description: Bot move returned (shape depends on bot-API service).
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          description: Bot-API service error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+
+  /createuser:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      description: Forwards registration data to the users microservice.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '409':
+          description: Username or e-mail already taken.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: User service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /login:
+    post:
+      tags: [Auth]
+      summary: Log in and obtain a JWT
+      description: |
+        Forwards credentials to the authentication microservice.
+        On success, returns a signed JWT to be included as a
+        `Bearer` token in subsequent `Authorization` headers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Auth service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /verify:
+    get:
+      tags: [Auth]
+      summary: Verify a JWT
+      description: |
+        Validates the Bearer token passed in the `Authorization` header
+        by forwarding it to the authentication microservice.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token is valid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  username:
+                    type: string
+                    example: "alice"
+        '401':
+          description: Missing or invalid token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Auth service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Users / history ───────────────────────────────────────────────────────
+
+  /gameresult:
+    post:
+      tags: [Users]
+      summary: Record a finished game result
+      description: Persists a game outcome for a user in the users microservice.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameResultRequest'
+      responses:
+        '200':
+          description: Result recorded.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '500':
+          description: User service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /history/{username}:
+    get:
+      tags: [Users]
+      summary: Get a user's game history
+      description: Returns paginated game history and aggregate stats for a user.
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          example: alice
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+          description: Maximum number of results to return.
+      responses:
+        '200':
+          description: History returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryResponse'
+        '404':
+          description: User not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: User service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ranking:
+    get:
+      tags: [Users]
+      summary: Top-10 players by wins
+      responses:
+        '200':
+          description: Ranking list returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RankingResponse'
+        '500':
+          description: User service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /leaderboard:
+    get:
+      tags: [Users]
+      summary: Full leaderboard
+      description: |
+        Returns wins, losses, win-rate, and total games for all ranked players.
+      responses:
+        '200':
+          description: Leaderboard returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LeaderboardResponse'
+        '500':
+          description: User service unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # ── Reusable responses ────────────────────────────────────────────────────
+  responses:
+    BadRequest:
+      description: Invalid or missing request parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ServiceUnavailable:
+      description: Upstream microservice unreachable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            default:
+              value:
+                ok: false
+                error: "Game server unavailable"
+
+  # ── Schemas ───────────────────────────────────────────────────────────────
+  schemas:
+
+    # -- Primitives / shared --------------------------------------------------
+
+    BotId:
+      type: string
+      description: Identifier of a registered bot.
+      enum:
+        - random_bot
+        - smart_bot
+        - heuristic_bot
+        - minimax_bot
+        - alfa_beta_bot
+        - monte_carlo_bot
+        - monte_carlo_hard
+        - monte_carlo_extreme
+      example: minimax_bot
+
+    Yen:
+      type: object
+      description: |
+        YEN — the opaque game-state object produced and consumed by the
+        Rust engine. Contains at minimum `layout`, `players`, and `size`.
+      required: [layout, players, size]
+      properties:
+        layout:
+          type: array
+          description: Flat or nested board representation.
+          items: {}
+        players:
+          type: object
+          description: Player metadata keyed by player identifier.
+          additionalProperties: true
+        size:
+          type: integer
+          description: Board edge length.
+          example: 11
+      additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Missing YEN"
+        details:
+          description: Optional upstream error payload.
+          nullable: true
+
+    # -- Auth -----------------------------------------------------------------
+
+    RegisterRequest:
+      type: object
+      required: [username, email, password]
+      properties:
+        username:
+          type: string
+          example: alice
+        email:
+          type: string
+          format: email
+          example: alice@example.com
+        password:
+          type: string
+          format: password
+          example: "s3cr3t!"
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: alice
+        password:
+          type: string
+          format: password
+          example: "s3cr3t!"
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        username:
+          type: string
+          example: alice
+
+    # -- Game -----------------------------------------------------------------
+
+    NewGameResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        yen:
+          $ref: '#/components/schemas/Yen'
+
+    MoveRequest:
+      type: object
+      required: [yen, row, col]
+      properties:
+        yen:
+          $ref: '#/components/schemas/Yen'
+        row:
+          type: integer
+          description: Zero-based row index.
+          example: 5
+        col:
+          type: integer
+          description: Zero-based column index.
+          example: 3
+
+    MoveResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        yen:
+          $ref: '#/components/schemas/Yen'
+        finished:
+          type: boolean
+          description: True when the game has ended.
+          example: false
+        winner:
+          type: string
+          nullable: true
+          description: Winning player identifier, or null if the game is ongoing.
+          example: null
+        winning_edges:
+          type: array
+          description: Cells that form the winning path, empty while game is ongoing.
+          items:
+            type: object
+            properties:
+              row:
+                type: integer
+              col:
+                type: integer
+
+    # -- Users ----------------------------------------------------------------
+
+    GameResultRequest:
+      type: object
+      required: [username, opponent, result]
+      properties:
+        username:
+          type: string
+          example: alice
+        opponent:
+          type: string
+          description: Opponent username or bot ID.
+          example: minimax_bot
+        result:
+          type: string
+          enum: [win, loss]
+          example: win
+        score:
+          type: integer
+          nullable: true
+          description: Optional numeric score.
+          example: 42
+
+    GameEntry:
+      type: object
+      properties:
+        opponent:
+          type: string
+          example: minimax_bot
+        result:
+          type: string
+          enum: [win, loss]
+        score:
+          type: integer
+          nullable: true
+        played_at:
+          type: string
+          format: date-time
+
+    HistoryResponse:
+      type: object
+      properties:
+        username:
+          type: string
+          example: alice
+        wins:
+          type: integer
+          example: 7
+        losses:
+          type: integer
+          example: 3
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameEntry'
+
+    RankingEntry:
+      type: object
+      properties:
+        rank:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: alice
+        wins:
+          type: integer
+          example: 42
+
+    RankingResponse:
+      type: object
+      properties:
+        ranking:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/RankingEntry'
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        username:
+          type: string
+          example: alice
+        wins:
+          type: integer
+          example: 42
+        losses:
+          type: integer
+          example: 10
+        total_games:
+          type: integer
+          example: 52
+        win_rate:
+          type: number
+          format: float
+          description: Win ratio between 0 and 1.
+          example: 0.808
+
+    LeaderboardResponse:
+      type: object
+      properties:
+        leaderboard:
+          type: array
+          items:
+            $ref: '#/components/schemas/LeaderboardEntry'
