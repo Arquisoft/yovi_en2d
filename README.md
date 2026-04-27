@@ -10,6 +10,8 @@ This project contains the yovi_en2d lab assignment.
 
 [Documentation website](https://arquisoft.github.io/yovi_en2d)
 
+[Bot-api documentation website](https://arquisoft.github.io/yovi_en2d/swagger/)
+
 ## Project Structure
 
 The project is divided into three main components, each in its own directory:
