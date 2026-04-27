@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>YOVI Bot API</title>
+    <title>GameOfY API Docs</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
 </head>
 <body>
@@ -10,8 +10,16 @@
 <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
 <script>
     SwaggerUIBundle({
-        url: "./bot-api.yaml",
+        urls: [
+            { url: "./bot-api.yaml",   name: "Bot API" },
+            { url: "./openapi.yaml",   name: "Gateway API" },
+        ],
+        "urls.primaryName": "Gateway API",  // which one opens by default
         dom_id: '#swagger-ui',
+        presets: [
+            SwaggerUIBundle.presets.apis,
+            SwaggerUIBundle.SwaggerUIStandalonePreset
+        ],
     });
 </script>
 </body>
