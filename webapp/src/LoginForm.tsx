@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "./i18n/I18nProvider";
 import logo from "../img/logo.png";
+import LanguageToggle from "./LanguageToggle.tsx";
 const API_URL = import.meta.env.VITE_API_URL ?? "/api"; // <-- use relative
 
 const LoginForm: React.FC = () => {
@@ -47,6 +48,7 @@ const LoginForm: React.FC = () => {
         <div className="site-header__inner">
           <img src={logo} alt="GameY" className="site-header__logo" />
           <span className="site-header__title">{t("app.brand")}</span>
+          <LanguageToggle />
         </div>
       </header>
       <div className="site-header__ribbon" aria-hidden="true" />
