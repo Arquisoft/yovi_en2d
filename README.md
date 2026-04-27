@@ -12,7 +12,7 @@ This project contains the **yovi_en2d lab assignment**, a distributed game platf
 
 - 🎮 Game platform: https://gameofy.publicvm.com/
 - 📚 Architecture documentation: https://arquisoft.github.io/yovi_en2d
-- 🤖 Bot API (Swagger / OpenAPI docs): https://arquisoft.github.io/yovi_en2d/swagger.html
+- 🤖 Bot/Gateway API (Swagger / OpenAPI docs): https://arquisoft.github.io/yovi_en2d/swagger.html
 
 ---
 
