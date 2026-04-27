@@ -494,12 +494,15 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_runtime_scenario_4_error_and_exception_handling">7.4. Runtime Scenario 4: Error and Exception Handling</a></li>
 </ul>
 </li>
-<li><a href="#section-runtime-view">8. Runtime View</a>
+<li><a href="#section-deployment-view">8. Deployment View</a>
 <ul class="sectlevel2">
-<li><a href="#_runtime_scenario_1_user_registration">8.1. Runtime Scenario 1: User Registration</a></li>
-<li><a href="#_runtime_scenario_2_playthrough_of_a_game_against_two_players_2">8.2. Runtime Scenario 2: Playthrough of a Game against two players</a></li>
-<li><a href="#_runtime_scenario_3_play_game_vs_ai_bot_2">8.3. Runtime Scenario 3: Play Game vs. AI Bot</a></li>
-<li><a href="#_runtime_scenario_4_error_and_exception_handling_2">8.4. Runtime Scenario 4: Error and Exception Handling</a></li>
+<li><a href="#_level_1_production_deployment_overview">8.1. Level 1: Production Deployment Overview</a></li>
+<li><a href="#_level_2_internal_structure_of_key_nodes">8.2. Level 2: Internal Structure of Key Nodes</a></li>
+<li><a href="#_mapping_of_building_blocks_to_infrastructure">8.3. Mapping of Building Blocks to Infrastructure</a></li>
+<li><a href="#_deployment_decisions_and_rationale">8.4. Deployment Decisions and Rationale</a></li>
+<li><a href="#_deployment_scripts_and_configuration">8.5. Deployment Scripts and Configuration</a></li>
+<li><a href="#_quality_and_performance_features">8.6. Quality and Performance Features</a></li>
+<li><a href="#_mapping_of_building_blocks_to_infrastructure_2">8.7. Mapping of Building Blocks to Infrastructure</a></li>
 </ul>
 </li>
 <li><a href="#section-concepts">9. Cross-cutting Concepts</a>
@@ -522,7 +525,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_adr_004_api_gateway_as_single_entry_point">10.4. ADR-004: API Gateway as Single Entry Point</a></li>
 <li><a href="#_adr_005_strategy_pattern_for_ai_bot_behaviors">10.5. ADR-005: Strategy Pattern for AI Bot Behaviors</a></li>
 <li><a href="#_adr_006_reverse_proxy_and_https_termination">10.6. ADR-006: Reverse Proxy and HTTPS Termination</a></li>
-<li><a href="#_summary_of_architectural_decisions">10.7. Summary of Architectural Decisions</a></li>
+<li><a href="#_adr_007_monitoring_and_observability_stack">10.7. ADR-007: Monitoring and Observability Stack</a></li>
+<li><a href="#_summary_of_architectural_decisions">10.8. Summary of Architectural Decisions</a></li>
 </ul>
 </li>
 <li><a href="#section-quality-scenarios">11. Quality Requirements</a>
@@ -692,7 +696,7 @@ and Node.js, integration tests between services, and end-to-end tests for the we
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Development Team</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">yovi_en2c</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">yovi_en2d</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Implement a scalable, maintainable, and well-documented solution.</p></td>
 </tr>
 <tr>
@@ -1987,211 +1991,448 @@ we present a <strong>hierarchical view</strong>:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="section-runtime-view">8. Runtime View</h2>
+<h2 id="section-deployment-view">8. Deployment View</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>This section describes the <strong>dynamic behavior</strong> of the YOVI system. Following arc42 guidelines, we present a representative selection of <strong>architecturally significant scenarios</strong>:</p>
+<p>This section describes the <strong>technical infrastructure</strong> that executes the YOVI system and the <strong>mapping of building blocks</strong> (from Section 5) to infrastructure elements. Following arc42 guidelines, we present:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Critical use cases</strong>: User registration, gameplay against bot, bot API usage</p>
+<p><strong>Level 1</strong>: Overall deployment environment (production)</p>
 </li>
 <li>
-<p><strong>Key interactions</strong>: How building blocks cooperate</p>
+<p><strong>Level 2</strong>: Internal structure of key infrastructure nodes</p>
 </li>
 <li>
-<p><strong>Error scenarios</strong>: How the system handles failures</p>
+<p><strong>Environment variations</strong>: Development, test, and production differences
+The application is built to use Docker and a Virtual Machine as a host in such a way that it combines the portability of
+the containers with the security and isolation features of the VM.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="_level_1_production_deployment_overview">8.1. Level 1: Production Deployment Overview</h3>
+<div class="paragraph">
+<p>The YOVI system is deployed as a <strong>containerized application</strong> running on a <strong>cloud virtual machine</strong>. All services run in Docker containers, orchestrated with docker-compose.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/Production%20Deployment%20Level%201.png" alt="Production Deployment Level 1" width="1020" height="897">
+</div>
+</div>
+<div class="sect3">
+<h4 id="_infrastructure_elements_level_1">8.1.1. Infrastructure Elements (Level 1)</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Element</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Description</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Technology</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Purpose</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Cloud VM</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Virtual machine hosting all containers</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ubuntu 22.04 LTS</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Execution environment</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Docker Engine</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Container runtime</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Docker v24.0+</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Container orchestration</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Gateway Container</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">API Gateway service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nginx / Express Gateway</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Request routing, SSL termination</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Webapp Container</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Frontend service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js + React (static files)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Serve UI to users</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Users Container</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User management service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js + Express</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User data &amp; auth</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Gamey Container</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game engine service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rust</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Game logic &amp; AI</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MongoDB Container</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Database</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MongoDB 7.x</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Data persistence</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Prometheus Container</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Metrics collection</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus latest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoring</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Grafana Container</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Metrics visualization</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana latest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dashboards</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>GitHub Registry</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Container image registry</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GitHub Container Registry</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Image storage</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_communication_channels_level_1">8.1.2. Communication Channels (Level 1)</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+<col style="width: 20%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Channel</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Protocol</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Source</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Destination</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Purpose</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>External HTTPS</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTPS (TLS 1.3)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Internet</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gateway (port 443)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User/bot access</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Internal HTTP</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP (plain)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Gateway</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Webapp/Users/Gamey</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Service communication</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MongoDB Wire</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MongoDB protocol</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Users</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MongoDB (27017)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Database access</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Docker Pull</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTPS</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GitHub Registry</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Image download</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Metrics Scrape</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">All services</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoring data</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Grafana Query</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">HTTP</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Dashboard queries</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_level_2_internal_structure_of_key_nodes">8.2. Level 2: Internal Structure of Key Nodes</h3>
+<div class="sect3">
+<h4 id="_level_2_cloud_vm_internal_structure">8.2.1. Level 2: Cloud VM Internal Structure</h4>
+<div class="paragraph">
+<p>This diagram zooms into the Cloud VM, showing the container organization and internal networks.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="./images/Cloud%20VM%20Internal%20Structure.png" alt="Cloud VM Internal Structure" width="1407" height="817">
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_production_environment">8.2.2. Production Environment</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 40%;">
+<col style="width: 40%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Aspect</th>
+<th class="tableblock halign-left valign-top">Configuration</th>
+<th class="tableblock halign-left valign-top">Justification</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Location</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud VM (AWS EC2 / DigitalOcean)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Public accessibility</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Orchestration</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">docker-compose + systemd</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simple, sufficient for scale</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Networking</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Public IP + domain</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">User access</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Data</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Persistent volumes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Data durability</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Monitoring</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus + Grafana</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Observability</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Backup</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Daily automated backups</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Disaster recovery</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>SSL</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Let&#8217;s Encrypt auto-renew</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Security</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mapping_of_building_blocks_to_infrastructure">8.3. Mapping of Building Blocks to Infrastructure</h3>
+<div class="paragraph">
+<p>This table maps the <strong>building blocks</strong> from Section 5 to the <strong>infrastructure elements</strong> described above.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 16.667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Building Block</th>
+<th class="tableblock halign-left valign-top">Deployed As</th>
+<th class="tableblock halign-left valign-top">Environment</th>
+<th class="tableblock halign-left valign-top">Node</th>
+<th class="tableblock halign-left valign-top">Container</th>
+<th class="tableblock halign-left valign-top">Network</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Web Frontend Service</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Static files + Node server</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Production</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">webapp_container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">frontend_network</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>User Service</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Node.js application</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Production</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">users_container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">backend_network</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Game Engine Service</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rust binary</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Production</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gamey_container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">backend_network</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>API Gateway</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Nginx configuration</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Production</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">gateway_container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">frontend_network</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>MongoDB Database</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MongoDB instance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Production</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">mongodb_container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">backend_network</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Prometheus</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prometheus server</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Production</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">prometheus_container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">monitoring_network</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Grafana</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Grafana server</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Production</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Cloud VM</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">grafana_container</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">monitoring_network</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_deployment_decisions_and_rationale">8.4. Deployment Decisions and Rationale</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 14.2857%;">
+<col style="width: 28.5714%;">
+<col style="width: 28.5714%;">
+<col style="width: 28.5715%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Decision</th>
+<th class="tableblock halign-left valign-top">Rationale</th>
+<th class="tableblock halign-left valign-top">Alternatives Considered</th>
+<th class="tableblock halign-left valign-top">Trade-offs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Single VM with docker-compose</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Simplicity, cost-effective for expected load (10 concurrent users)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Kubernetes (overkill), separate VMs (costly)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Limited horizontal scaling, but simpler operations</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Separate networks</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Security isolation between frontend and backend</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Single flat network</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">More complex config, but better security</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Monitoring stack included</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Required for observability and course evaluation</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">External monitoring service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Additional resource usage, but integrated</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Persistent volumes</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Data durability across container restarts</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Ephemeral storage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Requires backup strategy</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Let&#8217;s Encrypt SSL</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Free, automated certificates</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Paid certificates, self-signed</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Auto-renewal complexity, but free</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_deployment_scripts_and_configuration">8.5. Deployment Scripts and Configuration</h3>
+<div class="paragraph">
+<p>The deployment is automated via:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong><code>docker-compose.yml</code></strong> – at repository root. Defines all services.</p>
 </li>
 <li>
-<p><strong>Operation scenarios</strong>: System startup and shutdown</p>
+<p><strong><code>deploy.sh</code></strong> – script for production deployment.</p>
+</li>
+<li>
+<p><strong>GitHub Actions workflow</strong> – CI/CD pipeline for testing and deployment.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_quality_and_performance_features">8.6. Quality and Performance Features</h3>
+<div class="paragraph">
+<p>Some of the characteristics obtained by the use of the specified implementation:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Isolation</strong>: Both thanks to the container isolation of Docker and the own security features of the Virtual Machine.</p>
+</li>
+<li>
+<p><strong>Portability and Compatibility</strong>: Thanks to the use of the Docker containers.</p>
+</li>
+<li>
+<p><strong>Security</strong>: If a container is compromised, the VM can act as another security layer.</p>
+</li>
+<li>
+<p><strong>Others</strong>: Scalability, easily maintainable, would be very simple to backup&#8230;&#8203;</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mapping_of_building_blocks_to_infrastructure_2">8.7. Mapping of Building Blocks to Infrastructure</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Webapp</strong>: Located in port 80, it is the one the user will connect to and interact with. It is the GUI (Graphic User Interface), and as such the frontend of the application.</p>
+</li>
+<li>
+<p><strong>Gateway</strong>: This block has port 8080 assigned, and it is in charge of acting as a bridge between the rest of the building blocks of the application.</p>
+</li>
+<li>
+<p><strong>Users</strong>: It is in charge of the user management as well as the authentication feature, and its port is 3000.</p>
+</li>
+<li>
+<p><strong>Gamey</strong>: This service, written in Rust, is the one containing the complete functionality of the Y Game. It uses port 4000.</p>
+</li>
+<li>
+<p><strong>Database</strong>: It is an external block containing all the information of the application (user data, game data&#8230;&#8203;).</p>
 </li>
 </ul>
 </div>
 <div class="paragraph">
-<p>These scenarios demonstrate how the building blocks defined in Section 5 collaborate at runtime.</p>
-</div>
-<div class="sect2">
-<h3 id="_runtime_scenario_1_user_registration">8.1. Runtime Scenario 1: User Registration</h3>
-<div class="paragraph">
-<p>This scenario shows how a new user creates an account in the system. The authentication service validates credentials and delegates user creation to the users service, then generates a JWT token.</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="./images/User%20Registration%20Sequence.png" alt="User Registration Sequence" width="1547" height="1327">
-</div>
-</div>
-<div class="paragraph">
-<p><strong>Steps:</strong></p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>User fills registration form in the web frontend</p>
-</li>
-<li>
-<p>Frontend performs basic validation (client-side)</p>
-</li>
-<li>
-<p>Frontend sends registration request to API Gateway at <code>POST /register</code></p>
-</li>
-<li>
-<p>Gateway forwards to Authentication Service</p>
-</li>
-<li>
-<p>Auth service validates payload (required fields, password length, passwords match)</p>
-</li>
-<li>
-<p><strong>Alternative 1 (validation error)</strong>: Returns 400, UI shows error</p>
-</li>
-<li>
-<p>Auth service calls User Service at <code>POST /createuser</code></p>
-</li>
-<li>
-<p><strong>Alternative 2 (user exists)</strong>: User Service returns 400, error propagated to UI</p>
-</li>
-<li>
-<p><strong>Alternative 3 (new user)</strong>: User Service inserts document in MongoDB</p>
-</li>
-<li>
-<p>Auth service generates JWT token and returns 201 with token</p>
-</li>
-<li>
-<p>Frontend stores token and username in localStorage, redirects to <code>/home</code></p>
-</li>
-</ol>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_runtime_scenario_2_playthrough_of_a_game_against_two_players_2">8.2. Runtime Scenario 2: Playthrough of a Game against two players</h3>
-<div class="paragraph">
-<p>The following diagram shows the flow of a normal playthrough of a game with two players going against each other (planned feature — not yet implemented):</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="./images/User%20VS%20User%20Game%20Diagram.png" alt="User VS User Game Diagram" width="859" height="1351">
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_runtime_scenario_3_play_game_vs_ai_bot_2">8.3. Runtime Scenario 3: Play Game vs. AI Bot</h3>
-<div class="paragraph">
-<p>This scenario shows a complete game session between a human player and the AI, using the Rust game engine.</p>
-</div>
-<div class="imageblock">
-<div class="content">
-<img src="./images/Game%20vs%20Bot%20Sequence.png" alt="Game vs Bot Sequence" width="1369" height="1599">
-</div>
-</div>
-<div class="paragraph">
-<p><strong>Steps Summary:</strong></p>
-</div>
-<div class="paragraph">
-<p><strong>Initialization:</strong></p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>User selects bot difficulty and board size</p>
-</li>
-<li>
-<p>Frontend requests new game session via <code>POST /game/new</code></p>
-</li>
-<li>
-<p>Game engine creates initial YEN state and returns it</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p><strong>Game Loop:</strong></p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Player clicks a cell — frontend sends move via <code>POST /game/pvb/move</code> with YEN + row/col + bot id</p>
-</li>
-<li>
-<p>Gateway forwards to <code>POST /v1/game/pvb/{bot_id}</code> on the game engine</p>
-</li>
-<li>
-<p>Game engine validates player move and checks win condition</p>
-</li>
-<li>
-<p>If player won → game ends, show victory screen</p>
-</li>
-<li>
-<p>If game continues → engine calculates bot move using selected strategy</p>
-</li>
-<li>
-<p>Bot move applied, win condition checked</p>
-</li>
-<li>
-<p>If bot won → game ends, show defeat screen</p>
-</li>
-<li>
-<p>If game continues → updated YEN returned and board re-rendered</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p><strong>Finalization:</strong></p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Game result sent to users service via <code>POST /gameresult</code></p>
-</li>
-<li>
-<p>Result stored in MongoDB</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p><strong>Architectural significance:</strong>
-- Shows <strong>Rust engine</strong> in action (move validation, AI calculation)
-- Demonstrates <strong>Strategy Pattern</strong> for bot behavior — bot selected by name via <code>YBotRegistry</code>
-- Illustrates <strong>YEN notation</strong> for game state exchange across all service boundaries
-- Shows <strong>complete flow</strong> from UI → gateway → engine → users service → database</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_runtime_scenario_4_error_and_exception_handling_2">8.4. Runtime Scenario 4: Error and Exception Handling</h3>
-<div class="paragraph">
-<p>This scenario shows how the system handles various failure conditions.</p>
-</div>
-<div class="sect3">
-<h4 id="_scenario_4_1_game_engine_unavailable">8.4.1. Scenario 4.1: Game Engine Unavailable</h4>
-<div class="imageblock">
-<div class="content">
-<img src="./images/Game%20Engine%20Down.png" alt="Game Engine Down" width="782" height="508">
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_scenario_4_2_invalid_move_business_rule_violation">8.4.2. Scenario 4.2: Invalid Move (Business Rule Violation)</h4>
-<div class="imageblock">
-<div class="content">
-<img src="./images/Invalid%20Move.png" alt="Invalid Move" width="741" height="517">
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_scenario_4_3_database_connection_lost">8.4.3. Scenario 4.3: Database Connection Lost</h4>
-<div class="imageblock">
-<div class="content">
-<img src="./images/Database%20Down.png" alt="Database Down" width="711" height="415">
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_scenario_4_4_invalid_or_expired_jwt_token">8.4.4. Scenario 4.4: Invalid or Expired JWT Token</h4>
-<div class="imageblock">
-<div class="content">
-<img src="./images/Invalid%20Token.png" alt="Invalid Token" width="879" height="537">
-</div>
+<p>Additionally, it is worth mentioning the presence of <strong>Prometheus</strong>, <strong>Loki</strong> and <strong>Grafana</strong>, they are external blocks that will be used to monitor and obtain metrics of the application and its usage.</p>
 </div>
 <div style="page-break-after: always;"></div>
-</div>
 </div>
 </div>
 </div>
@@ -2398,25 +2639,253 @@ README.md</pre>
 <div class="sect2">
 <h3 id="_testing_strategy">9.8. Testing Strategy</h3>
 <div class="paragraph">
-<p>All services include automated tests, run on every PR via GitHub Actions.</p>
+<p>The project follows a comprehensive testing strategy to ensure correctness, reliability, and quality across all system components. Different types of tests are implemented, including unit tests, end-to-end tests, and load testing.</p>
+</div>
+<div class="sect3">
+<h4 id="_unit_tests">9.8.1. Unit Tests</h4>
+<div class="paragraph">
+<p>Unit tests are implemented for individual services to validate core logic in isolation. These tests focus on:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><strong>Unit tests:</strong> Jest (Node) or cargo test (Rust), located in <code>*.test.ts</code> or <code>*_test.rs</code>; target 80%+ coverage.</p>
+<p>Business logic in backend services</p>
 </li>
 <li>
-<p><strong>Integration tests:</strong> Supertest (Node) or custom (Rust), located in <code>/test/integration/</code>; cover key paths and include proxy routing.</p>
+<p>API endpoint behavior</p>
 </li>
 <li>
-<p><strong>End-to-end tests:</strong> Playwright for critical user journeys; test flows via Proxy → Gateway → Services.</p>
-</li>
-<li>
-<p><strong>API tests:</strong> Postman/Newman in <code>/api-tests/</code>; ensure requests pass through proxy and TLS is handled correctly.</p>
+<p>Game logic validation in the game engine</p>
 </li>
 </ul>
 </div>
+<div class="paragraph">
+<p>Code coverage is measured and reported as part of the continuous integration process, ensuring that critical components are adequately tested.</p>
+</div>
+<hr>
+</div>
+<div class="sect3">
+<h4 id="_end_to_end_tests_e2e">9.8.2. End-to-End Tests (E2E)</h4>
+<div class="paragraph">
+<p>End-to-End tests are implemented using <strong>Playwright</strong> together with <strong>Cucumber</strong> for behavior-driven development (BDD). These tests validate the system from the user&#8217;s perspective, ensuring that all components work together correctly.</p>
+</div>
+<div class="paragraph">
+<p>The E2E tests are executed against the deployed application and simulate real user interactions through the browser.</p>
+</div>
+<div class="paragraph">
+<p><strong>Tested Flows</strong></p>
+</div>
+<div class="paragraph">
+<p>The following key user flows are covered:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Authentication flow</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>User registration</p>
+</li>
+<li>
+<p>User login (valid and invalid credentials)</p>
+</li>
+<li>
+<p>Logout functionality</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Game flow</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Navigation from home to game configuration</p>
+</li>
+<li>
+<p>Selection of bot and board size</p>
+</li>
+<li>
+<p>Starting a new game</p>
+</li>
+<li>
+<p>Interaction with the game board (selecting cells, sending moves)</p>
+</li>
+<li>
+<p>Returning to home</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Bot interaction</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Playing against AI bots</p>
+</li>
+<li>
+<p>Verifying game state updates after moves</p>
+</li>
+<li>
+<p>Ensuring correct rendering of game elements</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p><strong>Navigation and UI flow</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Access to statistics page</p>
+</li>
+<li>
+<p>Navigation between pages (home, game, stats)</p>
+</li>
+<li>
+<p>UI validation (buttons, selectors, labels)</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Architecture Coverage</strong></p>
+</div>
+<div class="paragraph">
+<p>A key aspect of the E2E tests is that they validate the <strong>full system integration</strong>, covering the entire request flow:</p>
+</div>
+<div class="paragraph">
+<p>User → Reverse Proxy → API Gateway → Microservices → Response</p>
+</div>
+<div class="paragraph">
+<p>Specifically:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Requests are sent to the public URL (HTTPS endpoint)</p>
+</li>
+<li>
+<p>The <strong>reverse proxy (Nginx)</strong> handles routing and SSL termination</p>
+</li>
+<li>
+<p>Requests are forwarded to the <strong>API Gateway</strong></p>
+</li>
+<li>
+<p>The gateway routes requests to the appropriate services:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Users service</p>
+</li>
+<li>
+<p>Game service</p>
+</li>
+<li>
+<p>Authentication service</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Responses propagate back through the same path to the user interface</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This ensures that all infrastructure components (networking, routing, and service communication) are tested as part of the system.</p>
+</div>
+<hr>
+</div>
+<div class="sect3">
+<h4 id="_load_testing">9.8.3. Load Testing</h4>
+<div class="paragraph">
+<p>Load testing is performed to evaluate system performance under concurrent usage.</p>
+</div>
+<div class="paragraph">
+<p>The tests simulate multiple users interacting with the system simultaneously, focusing on:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Concurrent game sessions</p>
+</li>
+<li>
+<p>API response times under load</p>
+</li>
+<li>
+<p>System stability under stress</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Key metrics analyzed include:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Average response time</p>
+</li>
+<li>
+<p>Throughput (requests per second)</p>
+</li>
+<li>
+<p>Error rate under load</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>These tests help identify performance bottlenecks and validate that the system meets performance requirements.</p>
+</div>
+<hr>
+</div>
+<div class="sect3">
+<h4 id="_continuous_integration">9.8.4. Continuous Integration</h4>
+<div class="paragraph">
+<p>All tests are integrated into the CI pipeline, ensuring that:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Tests are executed automatically on pull request (Unit Tests) or release (Unit Tests, e2e Tests and Load Tests)</p>
+</li>
+<li>
+<p>Failures are detected early in the development process</p>
+</li>
+<li>
+<p>Code quality and stability are maintained over time</p>
+</li>
+</ul>
+</div>
+<hr>
+</div>
+<div class="sect3">
+<h4 id="_summary">9.8.5. Summary</h4>
+<div class="paragraph">
+<p>This multi-layered testing strategy ensures:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Correctness of individual components (unit tests)</p>
+</li>
+<li>
+<p>Proper integration of all services (E2E tests)</p>
+</li>
+<li>
+<p>System performance and scalability (load tests)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Together, these tests contribute to the overall reliability, maintainability, and quality of the system.</p>
+</div>
 <div style="page-break-after: always;"></div>
+</div>
 </div>
 </div>
 </div>
@@ -2917,7 +3386,100 @@ We introduce a reverse proxy using <strong>Nginx</strong> as the public entry po
 <hr>
 </div>
 <div class="sect2">
-<h3 id="_summary_of_architectural_decisions">10.7. Summary of Architectural Decisions</h3>
+<h3 id="_adr_007_monitoring_and_observability_stack">10.7. ADR-007: Monitoring and Observability Stack</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Status</strong>: Implemented</p>
+</li>
+<li>
+<p><strong>Date</strong>: 2026-04-20</p>
+</li>
+<li>
+<p><strong>Deciders</strong>: Development Team</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Context</strong>:
+As the system evolved into a distributed microservices architecture, it became necessary to ensure visibility into system behavior, performance, and failures. Without proper monitoring and logging, diagnosing issues across multiple services would be complex and time-consuming. Additionally, the evaluation criteria require support for availability and observability.</p>
+</div>
+<div class="paragraph">
+<p><strong>Decision</strong>:
+We implemented a <strong>complete monitoring and observability stack</strong> composed of:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Prometheus</strong> for metrics collection</p>
+</li>
+<li>
+<p><strong>Grafana</strong> for metrics visualization and dashboards</p>
+</li>
+<li>
+<p><strong>Loki</strong> for centralized log aggregation</p>
+</li>
+<li>
+<p><strong>Promtail</strong> for log collection from Docker containers</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>All monitoring components are deployed within the same Docker Compose environment and connected through the shared internal network.</p>
+</div>
+<div class="paragraph">
+<p>The system collects and monitors:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Resource usage (CPU, memory)</p>
+</li>
+<li>
+<p>Request rates and response times</p>
+</li>
+<li>
+<p>Error rates and failed requests</p>
+</li>
+<li>
+<p>Service availability</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Logs from the user and authentication services are centralized and can be queried and visualized through Grafana, enabling correlation between logs and metrics.</p>
+</div>
+<div class="paragraph">
+<p><strong>Consequences</strong>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Positive: Improved visibility into system performance and behavior</p>
+</li>
+<li>
+<p>Positive: Faster debugging through centralized logs</p>
+</li>
+<li>
+<p>Positive: Real-time monitoring via Grafana dashboards</p>
+</li>
+<li>
+<p>Positive: Supports availability and reliability quality attributes</p>
+</li>
+<li>
+<p>Negative: Additional infrastructure components to maintain</p>
+</li>
+<li>
+<p>Negative: Slight increase in resource consumption</p>
+</li>
+<li>
+<p>Mitigation: Lightweight tools (Prometheus, Loki) and containerized deployment minimize overhead</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_summary_of_architectural_decisions">10.8. Summary of Architectural Decisions</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -2966,6 +3528,12 @@ We introduce a reverse proxy using <strong>Nginx</strong> as the public entry po
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>ADR-006</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Reverse Proxy + HTTPS</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Security and centralized routing</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Implemented</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>ADR-007</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Monitoring and Observability Stack</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Observability</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Implemented</p></td>
 </tr>
 </tbody>
@@ -3896,7 +4464,7 @@ all stakeholders (developers, client, evaluators, bot developers) have an <stron
 <div id="footer">
 <div id="footer-text">
 Version 8.2 EN<br>
-Last updated 2026-04-07 10:08:44 +0200
+Last updated 2026-04-27 17:55:39 +0200
 </div>
 </div>
 </body>
