@@ -7,6 +7,7 @@
 This project contains the yovi_en2d lab assignment. 
 
 [Yovi website](https://gameofy.publicvm.com/)
+
 [Documentation website](https://arquisoft.github.io/yovi_en2d)
 
 ## Project Structure
