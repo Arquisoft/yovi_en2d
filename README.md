@@ -6,6 +6,9 @@
 
 This project contains the yovi_en2d lab assignment. 
 
+[Yovi website](https://gameofy.publicvm.com/)
+[Documentation website](https://arquisoft.github.io/yovi_en2d)
+
 ## Project Structure
 
 The project is divided into three main components, each in its own directory:
