@@ -1,0 +1,441 @@
+openapi: 3.0.3
+
+info:
+  title: Bot API
+  description: |
+    The **Bot API** is the interoperability layer that allows external and internal bots
+    to interact with the Gamey game engine.
+
+    Through this API:
+    - Bots can request a single move for a given game position (`/play`).
+    - Bots or clients can create persistent game sessions, query their state, and play
+      moves turn-by-turn (`/games`).
+
+    ### Bot types
+    | Type | Format | Resolution |
+    |------|--------|------------|
+    | Local (built-in) | `random_bot`, `smart_bot`, … | Routed to the internal Gamey engine |
+    | Remote (external) | Full HTTP URL (e.g. `http://my-bot:5000`) | Must be pre-registered in `ALLOWED_REMOTE_BOT_URLS` env var |
+
+    > ⚠️ Any `bot_id` / `botId` value that is not in the server-side allowlist is
+    > rejected with `400 Bad Request`. This prevents SSRF and injection attacks.
+
+    ### Interoperability
+    The service is publicly reachable via NGINX at:
+    ```
+    https://gameofy.publicvm.com/interop/
+    ```
+    (proxied to `bot-api:6000`)
+
+  version: 1.0.0
+  contact:
+    name: Arquisoft – YoviEN2C Team
+
+servers:
+  - url: https://gameofy.publicvm.com/interop
+    description: Production server (via NGINX reverse proxy)
+  - url: http://localhost:6000
+    description: Local development server
+
+tags:
+  - name: Play
+    description: One-shot move requests – no session state is kept.
+  - name: Games
+    description: Stateful game sessions – create a game and play moves sequentially.
+
+# ─────────────────────────────────────────────────────────────────────────────
+paths:
+
+  # ── /play ──────────────────────────────────────────────────────────────────
+  /play:
+    get:
+      tags: [Play]
+      summary: Request a single bot move (stateless)
+      operationId: playOnce
+      description: |
+        Asks a bot to choose a move for the supplied game position.
+        No game session is created; the caller is responsible for tracking state.
+
+        The `position` parameter must be the full YEN (Yavi Encoded Notation)
+        object serialised as JSON.
+
+        The `bot_id` parameter identifies the bot to use:
+        - Omit it (or pass `random_bot`) to use the default random bot.
+        - Pass any other value from the built-in allowlist to use a specific local bot.
+        - Pass a pre-registered remote URL to delegate to an external bot service.
+      parameters:
+        - name: position
+          in: query
+          required: true
+          description: |
+            Current game state as a JSON-serialised YEN object.
+            Example: `{"layout":[[0,0,0],[0,0,0],[0,0,0]],"players":["r","b"],"size":3}`
+          schema:
+            type: string
+            example: '{"layout":[[0,0,0],[0,0,0],[0,0,0]],"players":["r","b"],"size":3}'
+        - name: bot_id
+          in: query
+          required: false
+          description: |
+            Identifier of the bot to use.
+            - Local bots: `random_bot` | `smart_bot` | `heuristic_bot` |
+              `minimax_bot` | `alfa_beta_bot` | `monte_carlo_bot` |
+              `monte_carlo_hard` | `monte_carlo_extreme`
+            - Remote bots: a URL pre-registered in `ALLOWED_REMOTE_BOT_URLS`
+              (e.g. `http://my-bot:5000`)
+          schema:
+            type: string
+            example: smart_bot
+      responses:
+        "200":
+          description: The bot's chosen move.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotResponse"
+              examples:
+                coordinate_move:
+                  summary: Bot returns a board coordinate
+                  value:
+                    coords:
+                      x: 1
+                      y: 0
+                      z: 2
+                action_move:
+                  summary: Bot returns a named action
+                  value:
+                    action: swap
+        "400":
+          description: Missing or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missing_position:
+                  value: { error: "position required" }
+                invalid_position_json:
+                  value: { error: "position is not valid JSON" }
+                invalid_bot:
+                  value: { error: "invalid bot_id" }
+        "500":
+          description: Internal error or bot service failure.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: play failed
+
+  # ── /games ─────────────────────────────────────────────────────────────────
+  /games:
+    post:
+      tags: [Games]
+      summary: Create a new game session
+      operationId: createGame
+      description: |
+        Creates a new stateful game session associated with a bot.
+        Returns a unique game `id` that must be used in subsequent `/games/{id}/play`
+        calls.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGameRequest"
+            example:
+              botId: minimax_bot
+              position:
+                layout: [[0,0,0],[0,0,0],[0,0,0]]
+                players: ["r","b"]
+                size: 3
+      responses:
+        "201":
+          description: Game session created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+              example:
+                id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                botId: minimax_bot
+                position:
+                  layout: [[0,0,0],[0,0,0],[0,0,0]]
+                  players: ["r","b"]
+                  size: 3
+                status: ONGOING
+        "500":
+          description: Unexpected server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── /games/{id} ────────────────────────────────────────────────────────────
+  /games/{id}:
+    get:
+      tags: [Games]
+      summary: Get a game session by ID
+      operationId: getGame
+      description: Returns the current state of a previously created game session.
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      responses:
+        "200":
+          description: Game session found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+              example:
+                id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                botId: smart_bot
+                position:
+                  layout: [[1,0,0],[0,2,0],[0,0,1]]
+                  players: ["r","b"]
+                  size: 3
+                status: ONGOING
+        "500":
+          description: Game not found or server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: game not found
+
+  # ── /games/{id}/play ───────────────────────────────────────────────────────
+  /games/{id}/play:
+    post:
+      tags: [Games]
+      summary: Play a move in a game session
+      operationId: playMove
+      description: |
+        Sends the current game position to the session's associated bot and returns
+        the bot's chosen move. The game state is updated internally.
+
+        The client should send the **updated** position after the human player's
+        move; the bot will then respond with its own move.
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlayMoveRequest"
+            example:
+              position:
+                layout: [[1,0,0],[0,0,0],[0,0,0]]
+                players: ["r","b"]
+                size: 3
+      responses:
+        "200":
+          description: Bot move computed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlayMoveResponse"
+              examples:
+                coord_response:
+                  summary: Bot chose a coordinate
+                  value:
+                    game:
+                      id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                      botId: minimax_bot
+                      position:
+                        layout: [[1,0,0],[0,0,0],[0,0,0]]
+                        players: ["r","b"]
+                        size: 3
+                      status: ONGOING
+                    move:
+                      coords:
+                        x: 2
+                        y: 1
+                        z: 0
+                action_response:
+                  summary: Bot chose an action
+                  value:
+                    game:
+                      id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                      botId: smart_bot
+                      position:
+                        layout: [[1,0,0],[0,0,0],[0,0,0]]
+                        players: ["r","b"]
+                        size: 3
+                      status: ONGOING
+                    move:
+                      action: swap
+        "500":
+          description: Game not found, bot error, or server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── /health ────────────────────────────────────────────────────────────────
+  /health:
+    get:
+      tags: [Play]
+      summary: Health check
+      operationId: healthCheck
+      description: Returns `OK` if the service is running. Used by Docker and load balancers.
+      responses:
+        "200":
+          description: Service is healthy.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+
+  parameters:
+    GameId:
+      name: id
+      in: path
+      required: true
+      description: Unique identifier of the game session (UUID v4).
+      schema:
+        type: string
+        format: uuid
+        example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+
+  schemas:
+
+    # ── YEN position (opaque object) ─────────────────────────────────────────
+    YenPosition:
+      type: object
+      description: |
+        YEN (Yavi Encoded Notation) — the canonical game state object used by the
+        Gamey engine. The exact shape depends on the game variant; the fields below
+        are the common ones for a standard Hex board.
+      properties:
+        layout:
+          type: array
+          description: 2-D array representing the board cells (0 = empty, 1 = player 1, 2 = player 2).
+          items:
+            type: array
+            items:
+              type: integer
+              enum: [0, 1, 2]
+          example: [[0,0,0],[0,1,0],[0,0,0]]
+        players:
+          type: array
+          description: Player colour tokens.
+          items:
+            type: string
+          example: ["r", "b"]
+        size:
+          type: integer
+          description: Board size (number of rows/columns).
+          example: 3
+      additionalProperties: true
+
+    # ── Bot move (discriminated union) ───────────────────────────────────────
+    BotResponse:
+      description: |
+        The bot's chosen move. Exactly one of `coords` or `action` will be present.
+      oneOf:
+        - $ref: "#/components/schemas/CoordMove"
+        - $ref: "#/components/schemas/ActionMove"
+
+    CoordMove:
+      type: object
+      description: The bot has chosen a board cell.
+      required: [coords]
+      properties:
+        coords:
+          type: object
+          required: [x, y, z]
+          properties:
+            x:
+              type: number
+              description: Column index.
+              example: 1
+            y:
+              type: number
+              description: Row index.
+              example: 0
+            z:
+              type: number
+              description: Layer / depth (used for 3-D board variants).
+              example: 0
+
+    ActionMove:
+      type: object
+      description: The bot has chosen a named action (e.g. `swap`).
+      required: [action]
+      properties:
+        action:
+          type: string
+          description: Name of the action.
+          example: swap
+
+    # ── Game model ────────────────────────────────────────────────────────────
+    Game:
+      type: object
+      description: A persistent game session.
+      required: [id, botId, position, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique game identifier (UUID v4).
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        botId:
+          type: string
+          description: |
+            Identifier of the bot associated with this session.
+            Either a local bot name or a pre-registered remote URL.
+          example: minimax_bot
+        position:
+          $ref: "#/components/schemas/YenPosition"
+        status:
+          type: string
+          enum: [ONGOING, FINISHED]
+          description: Current status of the game.
+          example: ONGOING
+
+    # ── Request bodies ────────────────────────────────────────────────────────
+    CreateGameRequest:
+      type: object
+      required: [botId, position]
+      properties:
+        botId:
+          type: string
+          description: |
+            Bot to associate with this session.
+            Must be a valid local bot name or a pre-registered remote URL.
+          example: minimax_bot
+        position:
+          $ref: "#/components/schemas/YenPosition"
+
+    PlayMoveRequest:
+      type: object
+      required: [position]
+      properties:
+        position:
+          $ref: "#/components/schemas/YenPosition"
+
+    # ── Response wrappers ─────────────────────────────────────────────────────
+    PlayMoveResponse:
+      type: object
+      required: [game, move]
+      properties:
+        game:
+          $ref: "#/components/schemas/Game"
+        move:
+          $ref: "#/components/schemas/BotResponse"
+
+    # ── Error ─────────────────────────────────────────────────────────────────
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: Human-readable error message.
+          example: "invalid bot_id"
