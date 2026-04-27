@@ -487,9 +487,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            ok: false
-            error: "Game server unavailable"
+          examples:
+            default:
+              value:
+                ok: false
+                error: "Game server unavailable"
 
   # ── Schemas ───────────────────────────────────────────────────────────────
   schemas:
@@ -579,7 +581,6 @@ components:
       properties:
         token:
           type: string
-          description: Signed JWT to be sent as `Authorization: Bearer <token>`.
           example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
         username:
           type: string
