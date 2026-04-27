@@ -53,7 +53,7 @@ and Node.js, integration tests between services, and end-to-end tests for the we
 [options="header",cols="1,2,2"]
 |===
 | Role/Name | Contact | Expectations
-| Development Team | yovi_en2c | Implement a scalable, maintainable, and well-documented solution.
+| Development Team | yovi_en2d | Implement a scalable, maintainable, and well-documented solution.
 | End Users | N/A | Usable, stable interface with complete gameplay and statistics features.
 | Micrati (Client) | N/A | Fulfillment of game, API, and public deployment requirements.
 | Project Evaluators | Arquisoft | Compliance with documentation, testing, deployment, and code quality criteria.

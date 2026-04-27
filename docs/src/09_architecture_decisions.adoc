@@ -210,6 +210,45 @@ This approach ensures that all internal services communicate over HTTP, while ex
 *  Mitigation: Nginx is lightweight and widely used in production environments
 
 ---
+=== ADR-007: Monitoring and Observability Stack
+
+* **Status**: Implemented
+* **Date**: 2026-04-20
+* **Deciders**: Development Team
+
+**Context**:
+As the system evolved into a distributed microservices architecture, it became necessary to ensure visibility into system behavior, performance, and failures. Without proper monitoring and logging, diagnosing issues across multiple services would be complex and time-consuming. Additionally, the evaluation criteria require support for availability and observability.
+
+**Decision**:
+We implemented a **complete monitoring and observability stack** composed of:
+
+* **Prometheus** for metrics collection
+* **Grafana** for metrics visualization and dashboards
+* **Loki** for centralized log aggregation
+* **Promtail** for log collection from Docker containers
+
+All monitoring components are deployed within the same Docker Compose environment and connected through the shared internal network.
+
+The system collects and monitors:
+
+* Resource usage (CPU, memory)
+* Request rates and response times
+* Error rates and failed requests
+* Service availability
+
+Logs from the user and authentication services are centralized and can be queried and visualized through Grafana, enabling correlation between logs and metrics.
+
+**Consequences**:
+
+*  Positive: Improved visibility into system performance and behavior
+*  Positive: Faster debugging through centralized logs
+*  Positive: Real-time monitoring via Grafana dashboards
+*  Positive: Supports availability and reliability quality attributes
+*  Negative: Additional infrastructure components to maintain
+*  Negative: Slight increase in resource consumption
+*  Mitigation: Lightweight tools (Prometheus, Loki) and containerized deployment minimize overhead
+
+
 
 === Summary of Architectural Decisions
 
@@ -221,4 +260,5 @@ This approach ensures that all internal services communicate over HTTP, while ex
 | **ADR-004** | API Gateway | Security, single entry point | Implemented
 | **ADR-005** | Strategy Pattern for AI | Extensibility for multiple strategies | Implemented
 | **ADR-006** | Reverse Proxy + HTTPS | Security and centralized routing | Implemented
+| **ADR-007** | Monitoring and Observability Stack | Observability | Implemented
 |===

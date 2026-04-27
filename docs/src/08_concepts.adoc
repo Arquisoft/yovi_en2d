@@ -134,9 +134,109 @@ README.md
 
 === Testing Strategy
 
-All services include automated tests, run on every PR via GitHub Actions.
+The project follows a comprehensive testing strategy to ensure correctness, reliability, and quality across all system components. Different types of tests are implemented, including unit tests, end-to-end tests, and load testing.
 
-- **Unit tests:** Jest (Node) or cargo test (Rust), located in `*.test.ts` or `*_test.rs`; target 80%+ coverage.
-- **Integration tests:** Supertest (Node) or custom (Rust), located in `/test/integration/`; cover key paths and include proxy routing.
-- **End-to-end tests:** Playwright for critical user journeys; test flows via Proxy → Gateway → Services.
-- **API tests:** Postman/Newman in `/api-tests/`; ensure requests pass through proxy and TLS is handled correctly.
+==== Unit Tests
+
+Unit tests are implemented for individual services to validate core logic in isolation. These tests focus on:
+
+* Business logic in backend services
+* API endpoint behavior
+* Game logic validation in the game engine
+
+Code coverage is measured and reported as part of the continuous integration process, ensuring that critical components are adequately tested.
+
+---
+
+==== End-to-End Tests (E2E)
+
+End-to-End tests are implemented using **Playwright** together with **Cucumber** for behavior-driven development (BDD). These tests validate the system from the user's perspective, ensuring that all components work together correctly.
+
+The E2E tests are executed against the deployed application and simulate real user interactions through the browser.
+
+**Tested Flows**
+
+The following key user flows are covered:
+
+* **Authentication flow**
+  - User registration
+  - User login (valid and invalid credentials)
+  - Logout functionality
+
+* **Game flow**
+  - Navigation from home to game configuration
+  - Selection of bot and board size
+  - Starting a new game
+  - Interaction with the game board (selecting cells, sending moves)
+  - Returning to home
+
+* **Bot interaction**
+  - Playing against AI bots
+  - Verifying game state updates after moves
+  - Ensuring correct rendering of game elements
+
+* **Navigation and UI flow**
+  - Access to statistics page
+  - Navigation between pages (home, game, stats)
+  - UI validation (buttons, selectors, labels)
+
+**Architecture Coverage**
+
+A key aspect of the E2E tests is that they validate the **full system integration**, covering the entire request flow:
+
+User → Reverse Proxy → API Gateway → Microservices → Response
+
+Specifically:
+
+* Requests are sent to the public URL (HTTPS endpoint)
+* The **reverse proxy (Nginx)** handles routing and SSL termination
+* Requests are forwarded to the **API Gateway**
+* The gateway routes requests to the appropriate services:
+  - Users service
+  - Game service
+  - Authentication service
+* Responses propagate back through the same path to the user interface
+
+This ensures that all infrastructure components (networking, routing, and service communication) are tested as part of the system.
+
+---
+
+==== Load Testing
+
+Load testing is performed to evaluate system performance under concurrent usage.
+
+The tests simulate multiple users interacting with the system simultaneously, focusing on:
+
+* Concurrent game sessions
+* API response times under load
+* System stability under stress
+
+Key metrics analyzed include:
+
+* Average response time
+* Throughput (requests per second)
+* Error rate under load
+
+These tests help identify performance bottlenecks and validate that the system meets performance requirements.
+
+---
+
+==== Continuous Integration
+
+All tests are integrated into the CI pipeline, ensuring that:
+
+* Tests are executed automatically on pull request (Unit Tests) or release (Unit Tests, e2e Tests and Load Tests)
+* Failures are detected early in the development process
+* Code quality and stability are maintained over time
+
+---
+
+==== Summary
+
+This multi-layered testing strategy ensures:
+
+* Correctness of individual components (unit tests)
+* Proper integration of all services (E2E tests)
+* System performance and scalability (load tests)
+
+Together, these tests contribute to the overall reliability, maintainability, and quality of the system.
