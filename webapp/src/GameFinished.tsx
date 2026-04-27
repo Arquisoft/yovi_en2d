@@ -83,13 +83,6 @@ const GameFinished: React.FC = () => {
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <button
                   type="button"
-                  className="btn btn--primary btn--full btn--lg"
-                  onClick={() => navigate("/game", { replace: true, state: { username } })}
-              >
-                {t("game.finished.back") ?? "Play Again"}
-              </button>
-              <button
-                  type="button"
                   className="btn btn--outline btn--full"
                   onClick={() => navigate("/stats", { state: { username } })}
               >

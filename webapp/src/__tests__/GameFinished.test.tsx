@@ -50,9 +50,6 @@ describe("GameFinished", () => {
       screen.getByRole("heading", { name: /Has ganado|You win/i })
     ).toBeInTheDocument();
 
-    expect(
-      screen.getByRole("button", { name: /Volver al juego|Back to game/i })
-    ).toBeInTheDocument();
   });
 
   test("renders lost message", () => {

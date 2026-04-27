@@ -94,7 +94,7 @@ export const translations: Record<Lang, Dict> = {
 
 
     // Game
-    "game.new": "Nueva partida",
+    "game.new": "Empezar",
     "game.send": "Enviar jugada",
     "game.sending": "Enviando…",
     "game.debug": "Debug YEN",
@@ -102,7 +102,7 @@ export const translations: Record<Lang, Dict> = {
     "game.ok": "Conectado correctamente → {msg}",
     "game.fail": "Error de conexión → {msg}",
     "game.back": "Volver a Home",
-    "game.restart": "Nueva partida",
+    "game.restart": "Empezar",
     "game.pressStart": "Pulsa empezar para jugar",
 
     // PvP
@@ -237,7 +237,7 @@ export const translations: Record<Lang, Dict> = {
 
 
     // Game
-    "game.new": "New game",
+    "game.new": "Start",
     "game.send": "Send move",
     "game.sending": "Sending…",
     "game.debug": "Debug YEN",
@@ -245,7 +245,7 @@ export const translations: Record<Lang, Dict> = {
     "game.ok": "Connected → {msg}",
     "game.fail": "Connection error → {msg}",
     "game.back": "Back To Home",
-    "game.restart": "New Game",
+    "game.restart": "Start",
     "game.pressStart": "Press Start to begin",
 
     // PvP

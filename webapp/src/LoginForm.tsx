@@ -57,7 +57,6 @@ const LoginForm: React.FC = () => {
         <div className="auth-card">
           <div className="auth-card__top">
             <img src={logo} alt="GameY" className="auth-card__logo" />
-            <LanguageToggle />
           </div>
 
           <h1 className="auth-card__heading">{t("login.heading") ?? "LOGIN"}</h1>

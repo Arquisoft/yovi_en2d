@@ -119,7 +119,7 @@ describe("Game component", () => {
 
     renderGame();
 
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -141,7 +141,7 @@ describe("Game component", () => {
 
     renderGame();
 
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
 
     expect(await screen.findByText(/Plain backend error/i)).toBeInTheDocument();
   });
@@ -160,7 +160,7 @@ describe("Game component", () => {
 
     renderGame();
 
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
 
     expect(await screen.findByText(/Game server unavailable/i)).toBeInTheDocument();
   });
@@ -183,7 +183,7 @@ describe("Game component", () => {
 
     renderGame();
 
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
 
     await waitFor(() => {
       expect(document.querySelectorAll("circle").length).toBeGreaterThan(0);
@@ -229,7 +229,7 @@ describe("Game component", () => {
 
     renderGame();
 
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
 
     await waitFor(() => {
       expect(document.querySelectorAll("circle").length).toBeGreaterThan(0);
@@ -281,7 +281,7 @@ describe("Game component", () => {
 
     renderGame();
 
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
 
     await waitFor(() => {
       expect(document.querySelectorAll("circle").length).toBeGreaterThan(0);
@@ -323,7 +323,7 @@ describe("Game component", () => {
 
     renderGame();
 
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
 
     await waitFor(() => {
       expect(document.querySelectorAll("circle").length).toBeGreaterThan(0);
@@ -378,7 +378,7 @@ describe("PvB – win / finish flow", () => {
         );
 
     renderGame();
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     await user.dblClick(document.querySelectorAll("circle")[0]);
@@ -400,7 +400,7 @@ describe("PvB – win / finish flow", () => {
         .mockResolvedValueOnce(moveFetch(winYen, true, "B", [[[0, 0], [0, 1]]]));
 
     renderGame();
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
     await user.dblClick(document.querySelectorAll("circle")[0]);
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
@@ -426,7 +426,7 @@ describe("PvB – win / finish flow", () => {
         .mockResolvedValueOnce(moveFetch(winYen, true, "R", [[[1, 0], [1, 1]]]));
 
     renderGame();
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
     await user.dblClick(document.querySelectorAll("circle")[0]);
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
@@ -454,7 +454,7 @@ describe("PvB – win / finish flow", () => {
         .mockResolvedValueOnce(moveFetch(drawYen, true, null, []));
 
     renderGame();
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
     await user.dblClick(document.querySelectorAll("circle")[0]);
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
@@ -481,7 +481,7 @@ describe("PvB – cell interaction edge cases", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch(occupiedYen));
 
     renderGame();
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     const sendBtn = screen.getByRole("button", { name: /Enviar jugada|Send move/i });
@@ -497,7 +497,7 @@ describe("PvB – cell interaction edge cases", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch());
 
     renderGame();
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     expect(screen.getByRole("button", { name: /Enviar jugada|Send move/i })).toBeDisabled();
@@ -513,7 +513,7 @@ describe("PvB – cell interaction edge cases", () => {
 
     renderGame();
 
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     await user.click(document.querySelectorAll("circle")[1]);
@@ -521,7 +521,7 @@ describe("PvB – cell interaction edge cases", () => {
         expect(screen.getByRole("button", { name: /Enviar jugada|Send move/i })).not.toBeDisabled()
     );
 
-    await user.click(screen.getByRole("button", { name: /^New Game$|^Nueva partida$/i }));
+    await user.click(screen.getByRole("button", { name: /^Start$|^Empezar$/i }));
 
     await waitFor(() =>
         expect(screen.getByRole("button", { name: /Enviar jugada|Send move/i })).toBeDisabled()
@@ -537,7 +537,7 @@ describe("PvP mode", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch());
 
     renderGame("Pablo", "player");
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     expect(screen.getByText(/Player 1's Turn|Turno del Jugador 1/i)).toBeInTheDocument();
@@ -548,7 +548,7 @@ describe("PvP mode", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch());
 
     renderGame("Pablo", "player");
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     await user.click(document.querySelectorAll("circle")[0]);
@@ -564,7 +564,7 @@ describe("PvP mode", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch());
 
     renderGame("Pablo", "player");
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     await user.dblClick(document.querySelectorAll("circle")[0]);
@@ -579,7 +579,7 @@ describe("PvP mode", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch());
 
     renderGame("Pablo", "player");
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     expect(screen.getByRole("button", { name: /Confirm|pvp\.confirm/i })).toBeDisabled();
@@ -597,7 +597,7 @@ describe("PvP mode", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch(nearDrawYen));
 
     renderGame("Pablo", "player");
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     const circles = document.querySelectorAll("circle");
@@ -621,10 +621,10 @@ describe("PvP mode", () => {
         .mockResolvedValueOnce(newGameFetch());
 
     renderGame("Pablo", "player");
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
-    const newGameBtns = screen.getAllByRole("button", { name: /^New Game$|^Nueva partida$/i });
+    const newGameBtns = screen.getAllByRole("button", { name: /^Start$|^Empezar$/i });
     await user.click(newGameBtns[0]);
 
     await waitFor(() => {
@@ -639,7 +639,7 @@ describe("PvP mode", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch(singleCellYen));
 
     renderGame("Pablo", "player", "random_bot", 1);
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     await act(async () => {
@@ -658,7 +658,7 @@ describe("PvP mode", () => {
     global.fetch = vi.fn().mockResolvedValueOnce(newGameFetch(singleCellYen));
 
     renderGame("Pablo", "player", "random_bot", 1);
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     await act(async () => {
@@ -686,7 +686,7 @@ describe("PvP mode", () => {
         .mockResolvedValueOnce(newGameFetch(singleCellYen));
 
     renderGame("Pablo", "player", "random_bot", 1);
-    await user.click(screen.getByRole("button", { name: /Nueva partida|New game/i }));
+    await user.click(screen.getByRole("button", { name: /Empezar|Start/i }));
     await waitFor(() => expect(document.querySelectorAll("circle").length).toBeGreaterThan(0));
 
     await act(async () => {
@@ -697,7 +697,7 @@ describe("PvP mode", () => {
       expect(screen.getByText(/Player 1 Wins!|¡Jugador 1 gana!/i)).toBeInTheDocument();
     });
 
-    const allNewGameBtns = screen.getAllByRole("button", { name: /^New Game$|^Nueva partida$/i });
+    const allNewGameBtns = screen.getAllByRole("button", { name: /^Start$|^Empezar$/i });
     const overlayPlayAgainBtn = allNewGameBtns.find(
         (btn) => btn.classList.contains("btn--lg")
     );
